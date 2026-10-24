@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rhetoric Sparring</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <!-- Setup screen -->
+    <section id="setup-screen">
+      <h1>Rhetoric Sparring</h1>
+      <p>Argue a topic against an AI opponent. Practice your rhetoric; see what techniques were used.</p>
+      <form id="setup-form">
+        <label>
+          Your name
+          <input type="text" id="name-input" placeholder="Your name" required />
+        </label>
+        <label>
+          Topic
+          <select id="topic-select">
+            <option value="">Choose a topic…</option>
+          </select>
+        </label>
+        <fieldset id="position-group">
+          <legend>Your position (the opponent takes the other)</legend>
+        </fieldset>
+        <label>
+          Opponent level
+          <select id="level-select">
+            <option value="friendly">Friendly</option>
+          </select>
+        </label>
+        <button type="submit" id="start-button" disabled>Start the debate</button>
+      </form>
+    </section>
+
+    <!-- Debate screen -->
+    <section id="debate-screen" hidden>
+      <h1 id="debate-title"></h1>
+      <div id="chat-panel" aria-live="polite"></div>
+      <form id="turn-form">
+        <textarea id="message-input" rows="3" placeholder="Your argument…"></textarea>
+        <button type="submit" id="send-button">Send</button>
+      </form>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

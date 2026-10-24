@@ -1,0 +1,73 @@
+/* Slices 1–4: plain, readable, unstyled-but-tidy. The final look arrives in
+   the "Look and Feel" slice (spec.md > Look and Feel). */
+
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  background: #f4f2ee;
+  color: #1c1c1c;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+label,
+fieldset {
+  display: block;
+  margin: 0.75rem 0;
+}
+
+input[type="text"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+#chat-panel {
+  border: 1px solid #ccc;
+  background: #fff;
+  min-height: 300px;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.message {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.message.user {
+  background: #e7f0e7;
+}
+
+.message.opponent {
+  background: #ece9f5;
+}
+
+.message.system {
+  background: #fbeaea;
+  color: #7a1f1f;
+}
