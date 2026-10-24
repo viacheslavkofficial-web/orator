@@ -21,7 +21,7 @@ Agent split: slices 1–4 are built by GLM via `5-build`. Slice 5 is reserved fo
   Learner check: Put your Z.ai platform key in `.env`, run `npm start`, open http://localhost:3000, start a debate on any topic as Friendly, send one argument, and see the opponent answer your actual point.
   Commit: `Scaffold app and first opponent reply via GLM`
 
-- [ ] **2. The judge analyzes each exchange, using the opponent's own technique log**
+- [x] **2. The judge analyzes each exchange, using the opponent's own technique log**
   Becomes usable: After each reply, a collapsed card appears in the right column; "Show analysis" reveals which techniques the opponent used (with quotes), which techniques you used or seem to have used, what worked, and a short assessment.
   Why now: This is `scope.md > The Unique Kernel`. It must exist before levels and the full loop are layered on.
   PRD ref: `prd.md > The opponent's technique log`, `prd.md > Exchange analysis (behind "Show analysis")`

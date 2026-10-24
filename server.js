@@ -1,11 +1,18 @@
-// Express server: serves public/, keeps the key secret, exposes the API.
+// Express server: serves public/, keeps the Z.ai key secret, exposes the API.
 
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { topics } from "./src/topics.js";
 import { callJson, requireApiKey } from "./src/llm.js";
-import { opponentPrompt, opponentSchema, resolveLevel } from "./src/prompts.js";
+import {
+  opponentPrompt,
+  opponentSchema,
+  judgePrompt,
+  judgeSchema,
+  resolveLevel,
+} from "./src/prompts.js";
+import { isKnownTechnique } from "./src/techniques.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +32,42 @@ app.get("/api/topics", (req, res) => {
   res.json(topics);
 });
 
+// The opponent may only log known techniques, and every logged quote must be
+// an exact substring of its reply — otherwise the judge's ground truth is not
+// checkable. One retry, then a readable failure.
+function opponentLogIsValid(result, reply) {
+  if (typeof result.reply !== "string" || !result.reply.trim()) return false;
+  if (!Array.isArray(result.techniques)) return false;
+  return result.techniques.every(
+    (t) =>
+      t &&
+      isKnownTechnique(t.name) &&
+      typeof t.quote === "string" &&
+      reply.includes(t.quote)
+  );
+}
+
+function judgeAnalysisIsValid(analysis, opponentLog) {
+  if (typeof analysis.whatWorked !== "string") return false;
+  if (typeof analysis.assessment !== "string") return false;
+  if (!Array.isArray(analysis.opponentTechniques)) return false;
+  if (!Array.isArray(analysis.userTechniques)) return false;
+  const loggedNames = new Set(
+    opponentLog.map((t) => t.name.toLowerCase())
+  );
+  return (
+    analysis.opponentTechniques.every(
+      (t) => t && isKnownTechnique(t.name) && loggedNames.has(t.name.toLowerCase())
+    ) &&
+    analysis.userTechniques.every(
+      (t) =>
+        t &&
+        isKnownTechnique(t.name) &&
+        (t.confidence === "clear" || t.confidence === "likely")
+    )
+  );
+}
+
 app.post("/api/turn", async (req, res) => {
   const { setup, history, message } = req.body ?? {};
   const level = resolveLevel(setup ?? {}, topics);
@@ -33,12 +76,52 @@ app.post("/api/turn", async (req, res) => {
   }
   try {
     const prompt = opponentPrompt({ setup, history: history ?? [], message, level });
-    const result = await callJson({
-      system: prompt.system,
-      input: prompt.input,
-      schema: opponentSchema,
+
+    let result = null;
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      result = await callJson({
+        system: prompt.system,
+        input: prompt.input,
+        schema: opponentSchema,
+      });
+      if (opponentLogIsValid(result, result.reply)) {
+        lastError = null;
+        break;
+      }
+      lastError = new Error(
+        "The opponent's technique log did not check out against its reply."
+      );
+      lastError.status = 500;
+    }
+    if (lastError) throw lastError;
+
+    const opponentLog = result.techniques;
+    const judge = judgePrompt({
+      userMessage: message,
+      reply: result.reply,
+      opponentLog,
     });
-    res.json({ reply: result.reply, opponentLog: result.techniques ?? [] });
+
+    let analysis = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      analysis = await callJson({
+        system: judge.system,
+        input: judge.input,
+        schema: judgeSchema,
+      });
+      if (judgeAnalysisIsValid(analysis, opponentLog)) {
+        lastError = null;
+        break;
+      }
+      lastError = new Error(
+        "The judge's analysis did not match the opponent's technique log."
+      );
+      lastError.status = 500;
+    }
+    if (lastError) throw lastError;
+
+    res.json({ reply: result.reply, opponentLog, analysis });
   } catch (err) {
     const status = err.status ?? 500;
     if (status >= 500) console.error("Turn failed:", err.message);

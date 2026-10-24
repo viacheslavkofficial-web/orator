@@ -135,6 +135,7 @@ turnForm.addEventListener("submit", async (event) => {
       analysis: data.analysis ?? null,
     });
     addChatMessage("opponent", data.reply);
+    addAnalysisCard(state.history.length, data.analysis);
     state.status = "debating";
   } catch (err) {
     // Keep the user's text so they can resend without retyping.
@@ -147,5 +148,58 @@ turnForm.addEventListener("submit", async (event) => {
     messageInput.focus();
   }
 });
+
+// --- Judge analysis column --------------------------------------------------
+
+const analysisCards = document.getElementById("analysis-cards");
+
+// One card per exchange, collapsed behind "Show analysis" so the user can
+// first try to spot the techniques themselves.
+function addAnalysisCard(exchangeNumber, analysis) {
+  const card = document.createElement("details");
+  card.className = "analysis-card";
+
+  const summary = document.createElement("summary");
+  summary.textContent = `Exchange ${exchangeNumber} — Show analysis`;
+  card.appendChild(summary);
+
+  if (!analysis) {
+    const placeholder = document.createElement("p");
+    placeholder.textContent = "No analysis available for this exchange.";
+    card.appendChild(placeholder);
+  } else {
+    card.appendChild(
+      analysisSection("Opponent used", formatTechniques(analysis.opponentTechniques, "effect"))
+    );
+    card.appendChild(
+      analysisSection("You used or seem to have used", formatTechniques(analysis.userTechniques, "confidence"))
+    );
+    card.appendChild(analysisSection("What worked", [analysis.whatWorked]));
+    card.appendChild(analysisSection("Assessment", [analysis.assessment]));
+  }
+
+  analysisCards.appendChild(card);
+}
+
+function analysisSection(title, lines) {
+  const section = document.createElement("div");
+  section.className = "analysis-section";
+  const heading = document.createElement("h3");
+  heading.textContent = title;
+  section.appendChild(heading);
+  for (const line of lines) {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = line;
+    section.appendChild(paragraph);
+  }
+  return section;
+}
+
+function formatTechniques(list, detailField) {
+  if (!list || !list.length) return ["None spotted."];
+  return list.map(
+    (t) => `“${t.quote}” — ${t.name} (${t[detailField] ?? ""})`.replace(/ \(\)$/, "")
+  );
+}
 
 loadTopics();

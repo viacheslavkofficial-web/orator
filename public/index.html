@@ -39,7 +39,13 @@
     <!-- Debate screen -->
     <section id="debate-screen" hidden>
       <h1 id="debate-title"></h1>
-      <div id="chat-panel" aria-live="polite"></div>
+      <div id="debate-layout">
+        <div id="chat-panel" aria-live="polite"></div>
+        <aside id="analysis-column">
+          <h2>Judge</h2>
+          <div id="analysis-cards"></div>
+        </aside>
+      </div>
       <form id="turn-form">
         <textarea id="message-input" rows="3" placeholder="Your argument…"></textarea>
         <button type="submit" id="send-button">Send</button>
