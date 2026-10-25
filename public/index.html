@@ -56,8 +56,9 @@
       </div>
       <form id="turn-form">
         <textarea id="message-input" rows="3" placeholder="Your argument…"></textarea>
-        <button type="submit" id="send-button">Send</button>
+        <button type="submit" id="send-button" disabled>Send</button>
       </form>
+      <p id="waiting-indicator" hidden>The opponent is preparing a reply…</p>
       <section id="verdict-panel" hidden>
         <h2>Final verdict</h2>
         <div id="verdict-content"></div>

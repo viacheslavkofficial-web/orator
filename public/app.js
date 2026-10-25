@@ -30,6 +30,7 @@ const headerLevel = document.getElementById("header-level");
 const headerCounter = document.getElementById("header-counter");
 const verdictPanel = document.getElementById("verdict-panel");
 const verdictContent = document.getElementById("verdict-content");
+const waitingIndicator = document.getElementById("waiting-indicator");
 const analysisCards = document.getElementById("analysis-cards");
 
 async function loadTopics() {
@@ -101,9 +102,10 @@ function startDebateScreen() {
   analysisCards.innerHTML = "";
   verdictPanel.hidden = true;
   verdictContent.innerHTML = "";
+  waitingIndicator.hidden = true;
   stopButton.disabled = true; // available from the first completed exchange
   messageInput.disabled = false;
-  sendButton.disabled = false;
+  sendButton.disabled = true; // enabled once the user types something
   setupScreen.hidden = true;
   debateScreen.hidden = false;
   messageInput.focus();
@@ -115,6 +117,13 @@ function updateCounter() {
 }
 
 // --- Debate -----------------------------------------------------------------
+
+// Send stays disabled while the input is empty (empty messages cannot be sent).
+messageInput.addEventListener("input", () => {
+  if (state.status !== "waiting" && state.status !== "finished") {
+    sendButton.disabled = !messageInput.value.trim();
+  }
+});
 
 function addChatMessage(speaker, text) {
   const bubble = document.createElement("div");
@@ -138,6 +147,7 @@ turnForm.addEventListener("submit", async (event) => {
   messageInput.disabled = true;
   sendButton.disabled = true;
   stopButton.disabled = true;
+  waitingIndicator.hidden = false;
   addChatMessage("user", message);
   messageInput.value = "";
 
@@ -174,9 +184,10 @@ turnForm.addEventListener("submit", async (event) => {
     addChatMessage("system", err.message);
     state.status = "debating";
   } finally {
+    waitingIndicator.hidden = true;
     if (state.status !== "finished") {
       messageInput.disabled = false;
-      sendButton.disabled = false;
+      sendButton.disabled = !messageInput.value.trim();
       messageInput.focus();
     }
     updateCounter();
@@ -191,6 +202,7 @@ stopButton.addEventListener("click", async () => {
   messageInput.disabled = true;
   sendButton.disabled = true;
   stopButton.disabled = true;
+  waitingIndicator.hidden = false;
   await finishDebate();
 });
 
@@ -212,6 +224,7 @@ async function finishDebate() {
   } catch (err) {
     addChatMessage("system", err.message);
   }
+  waitingIndicator.hidden = true;
   updateCounter();
 }
 

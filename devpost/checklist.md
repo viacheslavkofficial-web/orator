@@ -41,7 +41,7 @@ Agent split: slices 1–4 are built by GLM via `5-build`. Slice 5 is reserved fo
   Learner check: Run the same opening argument against Friendly and then Hostile; check they feel different; argue three exchanges, press Stop, and read the verdict.
   Commit: `Add opponent levels, debate loop, stop and verdict`
 
-- [ ] **4. Waiting, empty input, errors, and rude or off-topic messages behave as planned**
+- [x] **4. Waiting, empty input, errors, and rude or off-topic messages behave as planned**
   Becomes usable: Send is disabled for empty input and while waiting; a clear waiting indicator shows while the opponent replies; if the model fails, you see a plain message and your text stays in the box to resend; a rude or off-topic message gets called out by the opponent and the judge says it would look ridiculous in front of an audience.
   Why now: These are the states most likely to appear in the demo video; doing them before styling means the final slice only changes looks.
   PRD ref: `prd.md > States and Boundaries`

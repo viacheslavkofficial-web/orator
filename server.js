@@ -110,6 +110,21 @@ function countSentences(text) {
     .filter((s) => s.trim()).length;
 }
 
+// Plain, human-readable messages for the page (spec.md > Important Failure
+// Modes). The user's text stays in the input so they can resend.
+function clientMessage(err) {
+  if (err.status === 429) {
+    return "The model is busy. Wait a minute and send again.";
+  }
+  if (err.status === 401 || err.status === 403) {
+    return "The key was rejected. Check .env and restart the app.";
+  }
+  if (!err.status || err.status >= 500) {
+    return "The judge lost the thread. Send again.";
+  }
+  return err.message || "Something went wrong. Send again.";
+}
+
 app.post("/api/turn", async (req, res) => {
   const { setup, history, message } = req.body ?? {};
   const level = resolveLevel(setup ?? {}, topics);
@@ -180,7 +195,7 @@ app.post("/api/turn", async (req, res) => {
   } catch (err) {
     const status = err.status ?? 500;
     if (status >= 500) console.error("Turn failed:", err.message);
-    res.status(status).json({ error: err.message || "The model call failed." });
+    res.status(status).json({ error: clientMessage(err) });
   }
 });
 
@@ -232,7 +247,7 @@ app.post("/api/verdict", async (req, res) => {
   } catch (err) {
     const status = err.status ?? 500;
     if (status >= 500) console.error("Verdict failed:", err.message);
-    res.status(status).json({ error: err.message || "The model call failed." });
+    res.status(status).json({ error: clientMessage(err) });
   }
 });
 

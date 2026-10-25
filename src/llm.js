@@ -66,7 +66,9 @@ async function postChat(apiKey, body) {
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     const err = new Error(`Model request failed (${res.status}). ${detail}`.trim());
-    err.status = res.status === 429 ? 429 : 500;
+    // Preserve the statuses the app maps to distinct user-facing messages;
+    // everything else reads as a model failure.
+    err.status = [429, 401, 403].includes(res.status) ? res.status : 500;
     throw err;
   }
 

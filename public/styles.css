@@ -91,6 +91,11 @@ button:disabled {
   color: #555;
 }
 
+#waiting-indicator {
+  color: #555;
+  font-style: italic;
+}
+
 #verdict-panel {
   border: 1px solid #999;
   background: #fff;
