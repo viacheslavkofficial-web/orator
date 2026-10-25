@@ -142,10 +142,11 @@ function verdictSystemPrompt() {
     techniqueListText,
     ``,
     `Write in English. Be concrete and fair; no numeric scores, a verbal verdict only.`,
+    `Voice: the verdict is written to the user. Refer to the user as "you"/"your" in every section — never by name, never as "the user". Refer to the opponent in the third person as "the opponent" in every section — never as "you". "userSummary" describes how you argued; "opponentSummary" describes how the opponent argued.`,
     `Keep it short: "userSummary", "opponentSummary", "why" and "manipulation" are at most THREE sentences each.`,
     ``,
     `Return JSON only, in exactly this shape:`,
-    `{"userSummary": "<how the user argued, addressed to them directly in the second person ('You argued…') — never by name, at most three sentences>", "opponentSummary": "<how the opponent argued, at most three sentences>", "stronger": "user", "why": "<at most three sentences>", "manipulation": "<who manipulated and how, at most three sentences>"}`,
+    `{"userSummary": "<how you argued, in the second person, at most three sentences>", "opponentSummary": "<how the opponent argued, in the third person, at most three sentences>", "stronger": "user", "why": "<at most three sentences>", "manipulation": "<who manipulated and how, at most three sentences>"}`,
     `"stronger" must be exactly one of "user", "opponent" or "even". The opponent's full technique list with counts is computed from the logs and will be added to the verdict; do not include it yourself.`,
   ].join("\n");
 }
