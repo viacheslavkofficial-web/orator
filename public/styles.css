@@ -724,15 +724,16 @@ button:disabled {
   display: flex;
   gap: 0.45rem;
   align-items: baseline;
-  background: var(--bench-opp-tint);
-  border: 1px solid #dfc3c6;
+  background: #fbfbf8;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--bench-opp);
   border-radius: 2px;
   padding: 0.3rem 0.65rem;
   font-size: 0.9rem;
 }
 
 .tally-count {
-  color: var(--bench-opp);
+  color: var(--ink-soft);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
