@@ -78,8 +78,10 @@ export function resolveLevel(setup, topics) {
 function judgeSystemPrompt() {
   return [
     `You are a neutral judge of a practice debate exchange. You are not a participant.`,
-    `You receive: the user's message, the opponent's reply, the opponent's own technique log, and the opponent's list of techniques it exposed in the user's message.`,
-    `Treat the opponent's log and exposed list as ground truth: the opponent really used and really exposed those techniques in those phrases. Base every statement about the opponent on them and quote those phrases. "Exposed" here means only weak or manipulative user moves the opponent explicitly called out as flawed — a move the opponent merely acknowledged or conceded is not exposed.`,
+    `Work in this order: FIRST analyze the user's message on its own merits and label its techniques yourself; only afterwards read the opponent's log and exposed list for the opponent-side sections.`,
+    `You receive: the user's message, the opponent's reply, the opponent's own technique log, and the opponent's list of user moves it exposed.`,
+    `The log and exposed list are ground truth for the OPPONENT-side sections only. Never copy a label from them into your analysis of the user: if your independent reading of the user's message differs from the exposed list, keep your own reading. And remember: a move the opponent merely acknowledged or conceded is not "exposed".`,
+    `A single phrase can carry several labels — the same sentence may be both "analogy" and "strawman". Give each label its own entry.`,
     `For the user's side, infer which techniques from the list they used or seem to have used, and mark each as "clear" or "likely". When the user cites a source, organization, study, or expert, consider "appeal to authority" (relevant and credible) or "false authority" (irrelevant or vague) rather than lumping it into "evidence and examples".`,
     `Use ONLY technique names from this fixed list:`,
     techniqueListText,
