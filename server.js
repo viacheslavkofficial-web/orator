@@ -36,67 +36,90 @@ app.get("/api/topics", (req, res) => {
   res.json(topics);
 });
 
-// The opponent may only log known techniques, and every logged quote must be
-// an exact substring of its reply — otherwise the judge's ground truth is not
-// checkable. "exposed" entries must quote the user's message. One retry, then
-// a readable failure.
-function opponentLogIsValid(result, reply, userMessage, level) {
-  if (typeof result.reply !== "string" || !result.reply.trim()) return false;
-  if (!Array.isArray(result.techniques)) return false;
-  if (!Array.isArray(result.exposed ?? [])) return false;
-  const allowed = new Set(level.allowed.map((n) => n.toLowerCase()));
-  return (
-    result.techniques.every(
-      (t) =>
-        t &&
-        isKnownTechnique(t.name) &&
-        allowed.has(String(t.name).toLowerCase()) &&
-        typeof t.quote === "string" &&
-        reply.includes(t.quote)
-    ) &&
-    (result.exposed ?? []).every(
-      (t) =>
-        t &&
-        isKnownTechnique(t.name) &&
-        typeof t.quote_from_user === "string" &&
-        userMessage.includes(t.quote_from_user)
-    )
-  );
+// Quote matching tolerates the small cosmetic differences models introduce:
+// curly vs straight quotes, dashes, collapsed whitespace, and case. Only used
+// for comparison — stored quotes stay verbatim.
+function normalizeForQuoteMatch(text) {
+  return String(text ?? "")
+    .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/[\u00A0\u2000-\u200B]/g, " ")
+    .replace(/\s+/g, " ")
+    .toLowerCase()
+    .trim();
 }
 
-function judgeAnalysisIsValid(analysis, opponentLog, exposed, userMessage) {
-  if (typeof analysis.whatWorked !== "string") return false;
-  if (typeof analysis.assessment !== "string") return false;
-  if (!Array.isArray(analysis.opponentTechniques)) return false;
-  if (!Array.isArray(analysis.userTechniques)) return false;
-  if (!Array.isArray(analysis.opponentExposed ?? [])) return false;
-  const loggedNames = new Set(
-    opponentLog.map((t) => t.name.toLowerCase())
+function quoteMatches(quote, source) {
+  return normalizeForQuoteMatch(source).includes(normalizeForQuoteMatch(quote));
+}
+
+// The opponent may only log known, level-allowed techniques, and every logged
+// quote must match its reply (after normalization). A log entry that still
+// does not match is DROPPED rather than failing the whole turn — the user
+// retries themselves if they care; the judge's ground truth stays checkable.
+function sanitizeOpponentResult(result, reply, userMessage, level) {
+  const allowed = new Set(level.allowed.map((n) => n.toLowerCase()));
+  const techniques = (Array.isArray(result.techniques) ? result.techniques : []).filter(
+    (t) =>
+      t &&
+      isKnownTechnique(t.name) &&
+      allowed.has(String(t.name).toLowerCase()) &&
+      typeof t.quote === "string" &&
+      quoteMatches(t.quote, reply)
   );
-  const exposedNames = new Set((exposed ?? []).map((t) => t.name.toLowerCase()));
-  return (
-    analysis.opponentTechniques.every(
+  const exposed = (Array.isArray(result.exposed) ? result.exposed : []).filter(
+    (t) =>
+      t &&
+      isKnownTechnique(t.name) &&
+      typeof t.quote_from_user === "string" &&
+      quoteMatches(t.quote_from_user, userMessage)
+  );
+  return { techniques, exposed };
+}
+
+// Same contract for the judge: entries naming a technique that is not in the
+// (sanitized) log, or quoting a phrase that is not in the source, are dropped;
+// only failures of the top-level fields or brevity still reject the turn.
+function sanitizeJudgeAnalysis(analysis, opponentLog, exposed, reply, userMessage) {
+  const loggedNames = new Set(opponentLog.map((t) => t.name.toLowerCase()));
+  const exposedNames = new Set(exposed.map((t) => t.name.toLowerCase()));
+  return {
+    opponentTechniques: analysis.opponentTechniques.filter(
       (t) =>
         t &&
         isKnownTechnique(t.name) &&
         loggedNames.has(t.name.toLowerCase()) &&
-        countSentences(t.effect) <= 1
-    ) &&
-    analysis.userTechniques.every(
+        typeof t.effect === "string" &&
+        countSentences(t.effect) <= 1 &&
+        quoteMatches(t.quote, reply)
+    ),
+    userTechniques: analysis.userTechniques.filter(
       (t) =>
         t &&
         isKnownTechnique(t.name) &&
-        (t.confidence === "clear" || t.confidence === "likely")
-    ) &&
-    (analysis.opponentExposed ?? []).every(
+        (t.confidence === "clear" || t.confidence === "likely") &&
+        quoteMatches(t.quote, userMessage)
+    ),
+    opponentExposed: analysis.opponentExposed.filter(
       (t) =>
         t &&
         isKnownTechnique(t.name) &&
         exposedNames.has(t.name.toLowerCase()) &&
         typeof t.effect === "string" &&
         countSentences(t.effect) <= 1 &&
-        userMessage.includes(t.quote)
-    ) &&
+        quoteMatches(t.quote, userMessage)
+    ),
+  };
+}
+
+function judgeTopLevelIsValid(analysis) {
+  return (
+    typeof analysis.whatWorked === "string" &&
+    typeof analysis.assessment === "string" &&
+    Array.isArray(analysis.opponentTechniques) &&
+    Array.isArray(analysis.userTechniques) &&
+    Array.isArray(analysis.opponentExposed ?? []) &&
     countSentences(analysis.whatWorked) <= 3 &&
     countSentences(analysis.assessment) <= 3
   );
@@ -153,19 +176,20 @@ app.post("/api/turn", async (req, res) => {
         input: prompt.input,
         schema: opponentSchema,
       });
-      if (opponentLogIsValid(result, result.reply, message, level)) {
+      if (typeof result.reply === "string" && result.reply.trim()) {
         lastError = null;
         break;
       }
-      lastError = new Error(
-        "The opponent's technique log did not check out against its reply."
-      );
+      lastError = new Error("The model returned an empty reply.");
       lastError.status = 500;
     }
     if (lastError) throw lastError;
 
-    const opponentLog = result.techniques;
-    const exposed = result.exposed ?? [];
+    // Log entries whose quotes do not match (after normalization) are dropped,
+    // not retried — the reply itself is the debate's substance.
+    const sanitized = sanitizeOpponentResult(result, result.reply, message, level);
+    const opponentLog = sanitized.techniques;
+    const exposed = sanitized.exposed;
     const judge = judgePrompt({
       userMessage: message,
       reply: result.reply,
@@ -180,7 +204,11 @@ app.post("/api/turn", async (req, res) => {
         input: judge.input,
         schema: judgeSchema,
       });
-      if (judgeAnalysisIsValid(analysis, opponentLog, exposed, message)) {
+      if (judgeTopLevelIsValid(analysis)) {
+        analysis = {
+          ...analysis,
+          ...sanitizeJudgeAnalysis(analysis, opponentLog, exposed, result.reply, message),
+        };
         lastError = null;
         break;
       }
