@@ -4,65 +4,103 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rhetoric Sparring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap"
+  />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main>
     <!-- Setup screen -->
-    <section id="setup-screen">
-      <h1>Rhetoric Sparring</h1>
-      <p>Argue a topic against an AI opponent. Practice your rhetoric; see what techniques were used.</p>
-      <form id="setup-form">
-        <label>
-          Your name
-          <input type="text" id="name-input" placeholder="Your name" required />
+    <section id="setup-screen" class="setup">
+      <header class="setup-intro">
+        <p class="brand">Rhetoric Sparring</p>
+        <h1>Argue a motion against an AI opponent. A neutral judge shows which techniques each side used.</h1>
+        <p class="setup-lede">You speak first. The judge's notes stay hidden until you open them, so you can try to spot the opponent's moves yourself.</p>
+      </header>
+
+      <form id="setup-form" class="motion-sheet">
+        <label class="field">
+          <span class="field-label">Your name</span>
+          <input type="text" id="name-input" placeholder="How the opponent will address you" autocomplete="given-name" required />
         </label>
-        <label>
-          Topic
+
+        <label class="field">
+          <span class="field-label">The motion</span>
           <select id="topic-select">
-            <option value="">Choose a topic…</option>
+            <option value="">Choose a motion…</option>
           </select>
         </label>
-        <fieldset id="position-group">
-          <legend>Your position (the opponent takes the other)</legend>
+
+        <fieldset class="field sides">
+          <legend class="field-label">Your side</legend>
+          <div id="position-group" class="side-options">
+            <p class="side-placeholder">Choose a motion to see both sides.</p>
+          </div>
         </fieldset>
-        <label>
-          Opponent level
+
+        <label class="field">
+          <span class="field-label">Opponent</span>
           <select id="level-select">
             <option value="friendly">Friendly</option>
             <option value="strict">Strict</option>
             <option value="hostile">Hostile</option>
           </select>
+          <span id="level-hint" class="field-hint">Polite and correct. Argues on the merits and does not manipulate.</span>
         </label>
-        <button type="submit" id="start-button" disabled>Start the debate</button>
+
+        <button type="submit" id="start-button" class="primary" disabled>Take the floor</button>
       </form>
     </section>
 
     <!-- Debate screen -->
     <section id="debate-screen" hidden>
-      <div id="debate-header">
-        <span id="header-topic"></span>
-        <span id="header-position"></span>
-        <span id="header-level"></span>
-        <span id="header-counter">0 / 10</span>
-        <button type="button" id="stop-button" disabled>Stop</button>
-      </div>
+      <header id="debate-header" class="order-paper">
+        <div class="motion">
+          <span class="motion-label">The motion</span>
+          <span id="header-topic" class="motion-title"></span>
+        </div>
+        <dl class="stance">
+          <div class="stance-item user-side">
+            <dt>Your side</dt>
+            <dd id="header-position"></dd>
+          </div>
+          <div class="stance-item opponent-side">
+            <dt>Opponent</dt>
+            <dd id="header-level"></dd>
+          </div>
+        </dl>
+        <div class="header-actions">
+          <span class="counter"><span class="counter-label">Exchange</span> <span id="header-counter">0 / 10</span></span>
+          <button type="button" id="stop-button" class="quiet" disabled>Stop the debate</button>
+        </div>
+      </header>
+
       <div id="debate-layout">
-        <div id="chat-panel" aria-live="polite"></div>
-        <aside id="analysis-column">
-          <h2>Judge</h2>
+        <div class="floor">
+          <div id="chat-panel" aria-live="polite"></div>
+          <p id="waiting-indicator" hidden>The opponent is preparing a reply…</p>
+          <form id="turn-form">
+            <label for="message-input" class="visually-hidden">Your argument</label>
+            <textarea id="message-input" rows="3" placeholder="Make your argument…"></textarea>
+            <button type="submit" id="send-button" class="primary" disabled>Send</button>
+          </form>
+        </div>
+
+        <aside id="analysis-column" aria-label="Judge's notes">
+          <h2>Judge's notes</h2>
+          <p class="notes-hint">One note per exchange. Guess the techniques first, then open the note.</p>
           <div id="analysis-cards"></div>
         </aside>
       </div>
-      <form id="turn-form">
-        <textarea id="message-input" rows="3" placeholder="Your argument…"></textarea>
-        <button type="submit" id="send-button" disabled>Send</button>
-      </form>
-      <p id="waiting-indicator" hidden>The opponent is preparing a reply…</p>
-      <section id="verdict-panel" hidden>
-        <h2>Final verdict</h2>
+
+      <section id="verdict-panel" hidden aria-labelledby="verdict-title">
+        <h2 id="verdict-title">The judge's verdict</h2>
         <div id="verdict-content"></div>
-        <button type="button" id="new-debate-button">New debate</button>
+        <button type="button" id="new-debate-button" class="primary">New debate</button>
       </section>
     </section>
   </main>

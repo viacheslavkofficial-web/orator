@@ -1,158 +1,816 @@
-/* Slice 1–4: plain, readable, unstyled-but-tidy. The final look arrives in
-   the "Look and Feel" slice (spec.md > Look and Feel). */
+/* Rhetoric Sparring – the debate stage (spec.md > Look and Feel).
+   A chamber at night: ink-navy stage, cool order-paper panels, two benches
+   (green for you, crimson for the opponent), brass only for actions. */
+
+:root {
+  --stage: #16213a;
+  --stage-deep: #0f182b;
+  --stage-line: #2b3858;
+  --stage-text: #d9dde6;
+  --stage-muted: #9aa3b8;
+
+  --paper: #edeee8;
+  --paper-shade: #e1e3da;
+  --rule: #c9ccc1;
+  --ink: #1b2233;
+  --ink-soft: #4b5265;
+
+  --bench-you: #2e6a52;
+  --bench-you-tint: #e3ece6;
+  --bench-opp: #8c2f3b;
+  --bench-opp-tint: #f1e3e4;
+
+  --brass: #c39b4a;
+  --brass-hover: #d4ad5c;
+  --brass-ink: #241a06;
+
+  --serif: "Libre Caslon Text", "Iowan Old Style", Georgia, serif;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+
+  --radius-sheet: 3px;
+  --radius-control: 2px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 body {
-  font-family: system-ui, sans-serif;
   margin: 0;
-  background: #f4f2ee;
-  color: #1c1c1c;
+  background: var(--stage);
+  background-image: radial-gradient(ellipse at 50% -10%, #1e2b49 0%, var(--stage) 55%, var(--stage-deep) 100%);
+  background-attachment: fixed;
+  color: var(--stage-text);
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  min-height: 100vh;
 }
 
 main {
-  max-width: 1000px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem 3rem;
 }
 
-label,
-fieldset {
-  display: block;
-  margin: 0.75rem 0;
+[hidden] {
+  display: none !important;
 }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+/* ---------- Controls ---------- */
 
 input[type="text"],
 select,
 textarea {
   display: block;
   width: 100%;
-  margin-top: 0.25rem;
-  padding: 0.5rem;
   font: inherit;
-  box-sizing: border-box;
+  color: var(--ink);
+  background: #fbfbf8;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  padding: 0.65rem 0.75rem;
+}
+
+input[type="text"]:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--ink-soft);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(195, 155, 74, 0.45);
 }
 
 button {
   font: inherit;
-  padding: 0.5rem 1rem;
-  margin-top: 0.5rem;
+  font-weight: 500;
   cursor: pointer;
+  border-radius: var(--radius-control);
+  padding: 0.65rem 1.4rem;
+  border: 1px solid transparent;
+}
+
+button.primary {
+  background: var(--brass);
+  color: var(--brass-ink);
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--brass-hover);
+}
+
+button.quiet {
+  background: transparent;
+  color: var(--stage-text);
+  border-color: var(--stage-line);
+}
+
+button.quiet:hover:not(:disabled) {
+  border-color: var(--bench-opp);
+  color: #fff;
+  background: rgba(140, 47, 59, 0.35);
 }
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
-#debate-header {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  border: 1px solid #ccc;
-  background: #fff;
-  padding: 0.5rem 0.75rem;
+/* ---------- Setup screen ---------- */
+
+.setup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
+  gap: 3rem 4rem;
+  align-items: start;
+  padding-top: 3vh;
+}
+
+.setup-intro {
+  padding-top: 1.5rem;
+}
+
+.brand {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--brass);
+  letter-spacing: 0.02em;
+  margin: 0 0 1.5rem;
+}
+
+.setup-intro h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  line-height: 1.15;
+  color: #f3f4f7;
+  margin: 0 0 1.5rem;
+  max-width: 18ch;
+}
+
+.setup-lede {
+  color: var(--stage-muted);
+  max-width: 42ch;
+  margin: 0;
+}
+
+.motion-sheet {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius-sheet);
+  padding: 2rem 2rem 2.25rem;
+  border-top: 4px solid var(--brass);
+  box-shadow: 0 24px 60px rgba(4, 8, 20, 0.45);
+}
+
+.field {
+  display: block;
+  margin: 0 0 1.4rem;
+  border: 0;
+  padding: 0;
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
   font-size: 0.9rem;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
+  padding: 0;
 }
 
-#header-topic {
-  font-weight: bold;
+.field-hint {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-top: 0.45rem;
+}
+
+.side-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.side-placeholder {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  padding: 0.9rem;
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius-control);
+}
+
+.side-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  line-height: 1.35;
+  padding: 0.85rem 0.9rem 0.85rem 2.4rem;
+  background: #fbfbf8;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+}
+
+.side-option input {
+  position: absolute;
+  left: 0.85rem;
+  top: 1.05rem;
+  margin: 0;
+  accent-color: var(--bench-you);
+}
+
+.side-option:has(input:checked) {
+  border-color: var(--bench-you);
+  background: var(--bench-you-tint);
+  box-shadow: inset 3px 0 0 var(--bench-you);
+}
+
+#start-button {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1.05rem;
+  margin-top: 0.4rem;
+}
+
+/* ---------- Debate header: the order paper ---------- */
+
+.order-paper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 1rem 2.5rem;
+  align-items: end;
+  padding: 0 0 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--stage-line);
+}
+
+.motion-label,
+.stance dt,
+.counter-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--stage-muted);
+  margin-bottom: 0.2rem;
+}
+
+.motion-title {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 2.6vw, 2.15rem);
+  line-height: 1.15;
+  color: #f3f4f7;
+}
+
+.stance {
+  display: flex;
+  gap: 2rem;
+  margin: 0;
+}
+
+.stance dd {
+  margin: 0;
+  font-weight: 500;
+  max-width: 22ch;
+  line-height: 1.3;
+}
+
+.stance-item {
+  padding-left: 0.7rem;
+}
+
+.stance-item.user-side {
+  border-left: 3px solid var(--bench-you);
+}
+
+.stance-item.opponent-side {
+  border-left: 3px solid var(--bench-opp);
+}
+
+.header-actions {
+  display: flex;
+  align-items: end;
+  gap: 1.25rem;
+}
+
+.counter {
+  font-variant-numeric: tabular-nums;
 }
 
 #header-counter {
-  margin-left: auto;
-  white-space: nowrap;
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  color: var(--brass);
+  line-height: 1;
 }
 
+/* ---------- The floor and the judge's notes ---------- */
+
 #debate-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 23rem);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.floor {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius-sheet);
+  box-shadow: 0 18px 50px rgba(4, 8, 20, 0.4);
   display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
+  flex-direction: column;
+  min-height: 68vh;
 }
 
 #chat-panel {
-  flex: 2;
-  border: 1px solid #ccc;
-  background: #fff;
-  min-height: 300px;
-  max-height: 55vh;
-  overflow-y: auto;
-  padding: 0.75rem;
-  margin: 0.75rem 0;
-}
-
-#analysis-column {
   flex: 1;
-  max-height: 55vh;
   overflow-y: auto;
+  max-height: 62vh;
+  padding: 1.75rem 1.75rem 0.5rem;
 }
 
-#analysis-column h2 {
-  font-size: 1rem;
-  margin: 0.75rem 0 0.25rem;
-  color: #555;
-}
-
-#waiting-indicator {
-  color: #555;
+#chat-panel:empty::before {
+  content: "The floor is yours. Open with your strongest argument.";
+  display: block;
+  font-family: var(--serif);
   font-style: italic;
-}
-
-#verdict-panel {
-  border: 1px solid #999;
-  background: #fff;
-  padding: 1rem;
-  margin-top: 0.75rem;
-}
-
-#verdict-panel h2 {
-  margin-top: 0;
-}
-
-#verdict-panel h3 {
-  margin: 0.75rem 0 0.15rem;
-}
-
-#verdict-panel p {
-  margin: 0.15rem 0;
-}
-
-.analysis-card {
-  border: 1px solid #ccc;
-  background: #fff;
-  padding: 0.4rem 0.6rem;
-  margin: 0.4rem 0;
-  font-size: 0.9rem;
-}
-
-.analysis-card summary {
-  cursor: pointer;
-  color: #444;
-}
-
-.analysis-section h3 {
-  font-size: 0.85rem;
-  margin: 0.5rem 0 0.15rem;
-  color: #666;
-}
-
-.analysis-section p {
-  margin: 0.15rem 0;
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 18vh 1rem 0;
 }
 
 .message {
-  margin: 0.5rem 0;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  margin: 0 0 1.4rem;
+  padding: 0.15rem 0 0.15rem 1.1rem;
+  max-width: 88%;
 }
 
 .message.user {
-  background: #e7f0e7;
+  margin-left: auto;
+  border-left: 3px solid var(--bench-you);
 }
 
 .message.opponent {
-  background: #ece9f5;
+  margin-right: auto;
+  border-left: 3px solid var(--bench-opp);
+}
+
+.speaker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  margin: 0 0 0.3rem;
+}
+
+.speaker-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.message.user .speaker-name {
+  color: var(--bench-you);
+}
+
+.message.opponent .speaker-name {
+  color: var(--bench-opp);
+}
+
+.speaker-side {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.speech {
+  font-family: var(--serif);
+  font-size: 1.06rem;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 68ch;
 }
 
 .message.system {
-  background: #fbeaea;
-  color: #7a1f1f;
+  max-width: none;
+  border: 1px solid #d9b9bc;
+  background: var(--bench-opp-tint);
+  color: #6e1f29;
+  font-size: 0.92rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-control);
+}
+
+.message.system .speech {
+  font-family: var(--sans);
+  font-size: inherit;
+  line-height: 1.45;
+}
+
+#waiting-indicator {
+  margin: 0 1.75rem 0.75rem;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+#waiting-indicator::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--brass);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+#turn-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--rule);
+  background: var(--paper-shade);
+  border-radius: 0 0 var(--radius-sheet) var(--radius-sheet);
+}
+
+#message-input {
+  resize: vertical;
+  min-height: 4.5rem;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
+#send-button {
+  padding: 0.75rem 1.6rem;
+}
+
+/* The judge: a neutral clerk's notes, quieter than the floor. */
+
+#analysis-column {
+  max-height: calc(68vh + 2px);
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+#analysis-column h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.3rem;
+  color: #f3f4f7;
+  margin: 0 0 0.25rem;
+}
+
+.notes-hint {
+  font-size: 0.85rem;
+  color: var(--stage-muted);
+  margin: 0 0 1rem;
+}
+
+.analysis-card {
+  background: #e6e7e0;
+  color: var(--ink);
+  border-radius: var(--radius-sheet);
+  margin: 0 0 0.6rem;
+  font-size: 0.9rem;
+  border-left: 3px solid var(--stage-muted);
+}
+
+.analysis-card[open] {
+  border-left-color: var(--brass);
+}
+
+.analysis-card summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.75rem 0.95rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.analysis-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+.card-toggle::after {
+  content: "Show analysis";
+  font-size: 0.85rem;
+  color: var(--bench-you);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.analysis-card[open] .card-toggle::after {
+  content: "Hide analysis";
+  color: var(--ink-soft);
+}
+
+.analysis-card[open] summary {
+  border-bottom: 1px solid var(--rule);
+}
+
+.analysis-section {
+  padding: 0.7rem 0.95rem 0.2rem;
+}
+
+.analysis-section:last-child {
+  padding-bottom: 0.9rem;
+}
+
+.analysis-section h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 0 0 0.35rem;
+}
+
+.analysis-section p {
+  margin: 0 0 0.4rem;
+  line-height: 1.5;
+}
+
+.analysis-section p.none {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.technique {
+  margin: 0 0 0.7rem;
+}
+
+.technique-name {
+  font-weight: 600;
+  margin: 0 0 0.15rem !important;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.technique-quote {
+  display: block;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink);
+  line-height: 1.45;
+  margin-bottom: 0.15rem;
+}
+
+.technique-note {
+  color: var(--ink-soft);
+}
+
+.confidence {
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0 0.4rem;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+}
+
+.confidence-clear {
+  border-color: var(--bench-you);
+  color: var(--bench-you);
+}
+
+/* Opponent sections tinted crimson, the user's green: same benches as the floor. */
+.analysis-section:nth-of-type(1) h3 {
+  color: var(--bench-opp);
+}
+
+.analysis-section:nth-of-type(2) h3 {
+  color: var(--bench-you);
+}
+
+.analysis-section:nth-of-type(3) h3 {
+  color: var(--bench-opp);
+}
+
+/* ---------- Verdict ---------- */
+
+#verdict-panel {
+  margin-top: 2rem;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius-sheet);
+  border-top: 4px solid var(--brass);
+  padding: 2rem 2.25rem 2.25rem;
+  box-shadow: 0 24px 60px rgba(4, 8, 20, 0.5);
+  scroll-margin-top: 1rem;
+}
+
+#verdict-panel h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.5rem;
+}
+
+.ruling {
+  padding-bottom: 1.4rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ruling-headline {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+  line-height: 1.15;
+  margin: 0 0 0.6rem;
+}
+
+.ruling-user .ruling-headline {
+  color: var(--bench-you);
+}
+
+.ruling-opponent .ruling-headline {
+  color: var(--bench-opp);
+}
+
+.ruling-why {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.6;
+  max-width: 70ch;
+  margin: 0;
+}
+
+.verdict-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem 2.5rem;
+  margin-bottom: 1.4rem;
+}
+
+.verdict-side {
+  padding-left: 0.9rem;
+}
+
+.verdict-side.user-side {
+  border-left: 3px solid var(--bench-you);
+}
+
+.verdict-side.opponent-side {
+  border-left: 3px solid var(--bench-opp);
+}
+
+#verdict-panel h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+
+#verdict-panel p {
+  margin: 0;
+  line-height: 1.55;
+  max-width: 70ch;
+}
+
+.verdict-block {
+  margin-bottom: 1.4rem;
+}
+
+.technique-tally {
+  list-style: none;
+  margin: 0.3rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.technique-tally li {
+  display: flex;
+  gap: 0.45rem;
+  align-items: baseline;
+  background: var(--bench-opp-tint);
+  border: 1px solid #dfc3c6;
+  border-radius: 2px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.9rem;
+}
+
+.tally-count {
+  color: var(--bench-opp);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+#new-debate-button {
+  margin-top: 0.4rem;
+}
+
+/* ---------- Narrow screens ---------- */
+
+@media (max-width: 960px) {
+  .setup {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .order-paper {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .header-actions {
+    justify-content: space-between;
+  }
+
+  #debate-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #analysis-column {
+    max-height: none;
+  }
+
+  .floor {
+    min-height: 55vh;
+  }
+}
+
+@media (max-width: 560px) {
+  main {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .motion-sheet,
+  #verdict-panel {
+    padding: 1.4rem 1.2rem 1.6rem;
+  }
+
+  .side-options,
+  .verdict-sides {
+    grid-template-columns: 1fr;
+  }
+
+  .stance {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  #chat-panel {
+    padding: 1.25rem 1rem 0.5rem;
+  }
+
+  .message {
+    max-width: 100%;
+  }
+
+  #turn-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #waiting-indicator::before {
+    animation: none;
+    opacity: 1;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
 }

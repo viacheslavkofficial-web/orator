@@ -49,9 +49,16 @@ topicSelect.addEventListener("change", () => {
   state.setup.positionId = "";
   positionGroup.innerHTML = "";
   const topic = topics.find((t) => t.id === topicSelect.value);
-  if (!topic) return updateStartButton();
+  if (!topic) {
+    const placeholder = document.createElement("p");
+    placeholder.className = "side-placeholder";
+    placeholder.textContent = "Choose a motion to see both sides.";
+    positionGroup.appendChild(placeholder);
+    return updateStartButton();
+  }
   for (const position of topic.positions) {
     const label = document.createElement("label");
+    label.className = "side-option";
     const radio = document.createElement("input");
     radio.type = "radio";
     radio.name = "position";
@@ -60,11 +67,24 @@ topicSelect.addEventListener("change", () => {
       state.setup.positionId = position.id;
       updateStartButton();
     });
+    const text = document.createElement("span");
+    text.textContent = position.label;
     label.appendChild(radio);
-    label.appendChild(document.createTextNode(" " + position.label));
+    label.appendChild(text);
     positionGroup.appendChild(label);
   }
   updateStartButton();
+});
+
+// One-line description under the opponent select (prd.md > Opponent levels).
+const LEVEL_HINTS = {
+  friendly: "Polite and correct. Argues on the merits and does not manipulate.",
+  strict: "Picks at your wording and can turn your words against you, but argues on the merits.",
+  hostile: "Takes the opposite side hard. Expect demagoguery, strawmen and nitpicking – never personal insults.",
+};
+const levelHint = document.getElementById("level-hint");
+levelSelect.addEventListener("change", () => {
+  levelHint.textContent = LEVEL_HINTS[levelSelect.value] ?? "";
 });
 
 function updateStartButton() {
@@ -96,7 +116,8 @@ function startDebateScreen() {
   const levelLabel = levelSelect.options[levelSelect.selectedIndex].textContent;
   headerTopic.textContent = topic.title;
   headerPosition.textContent = position.label;
-  headerLevel.textContent = `Level: ${levelLabel}`;
+  headerLevel.textContent = levelLabel;
+  debateScreen.dataset.level = state.setup.level;
   updateCounter();
   chatPanel.innerHTML = "";
   analysisCards.innerHTML = "";
@@ -128,12 +149,26 @@ messageInput.addEventListener("input", () => {
 function addChatMessage(speaker, text) {
   const bubble = document.createElement("div");
   bubble.className = `message ${speaker}`;
-  const who = document.createElement("strong");
-  who.textContent =
-    speaker === "user" ? state.setup.name : "Opponent";
-  bubble.appendChild(who);
-  bubble.appendChild(document.createElement("br"));
-  bubble.appendChild(document.createTextNode(text));
+  if (speaker !== "system") {
+    const who = document.createElement("p");
+    who.className = "speaker";
+    const name = document.createElement("span");
+    name.className = "speaker-name";
+    name.textContent = speaker === "user" ? state.setup.name : "Opponent";
+    const side = document.createElement("span");
+    side.className = "speaker-side";
+    side.textContent =
+      speaker === "user"
+        ? headerPosition.textContent
+        : `${headerLevel.textContent} opponent`;
+    who.appendChild(name);
+    who.appendChild(side);
+    bubble.appendChild(who);
+  }
+  const speech = document.createElement("p");
+  speech.className = "speech";
+  speech.textContent = text;
+  bubble.appendChild(speech);
   chatPanel.appendChild(bubble);
   chatPanel.scrollTop = chatPanel.scrollHeight;
 }
@@ -147,6 +182,7 @@ turnForm.addEventListener("submit", async (event) => {
   messageInput.disabled = true;
   sendButton.disabled = true;
   stopButton.disabled = true;
+  waitingIndicator.textContent = "The opponent is preparing a reply…";
   waitingIndicator.hidden = false;
   addChatMessage("user", message);
   messageInput.value = "";
@@ -211,6 +247,8 @@ async function finishDebate() {
   messageInput.disabled = true;
   sendButton.disabled = true;
   stopButton.disabled = true;
+  waitingIndicator.textContent = "The judge is writing the verdict…";
+  waitingIndicator.hidden = false;
   try {
     const res = await fetch("/api/verdict", {
       method: "POST",
@@ -237,25 +275,57 @@ function renderVerdict(verdict) {
       : verdict.stronger === "opponent"
         ? "The opponent was stronger"
         : "The debate was even";
-  appendVerdictSection(verdictContent, "h3", strongerLabel);
-  appendVerdictSection(verdictContent, "p", verdict.why);
+  const ruling = document.createElement("div");
+  ruling.className = `ruling ruling-${verdict.stronger ?? "even"}`;
+  appendVerdictSection(ruling, "p", strongerLabel).className = "ruling-headline";
+  appendVerdictSection(ruling, "p", verdict.why).className = "ruling-why";
+  verdictContent.appendChild(ruling);
 
-  appendVerdictSection(verdictContent, "h3", "How you argued");
-  appendVerdictSection(verdictContent, "p", verdict.userSummary);
+  const sides = document.createElement("div");
+  sides.className = "verdict-sides";
+  const userCol = document.createElement("div");
+  userCol.className = "verdict-side user-side";
+  appendVerdictSection(userCol, "h3", "How you argued");
+  appendVerdictSection(userCol, "p", verdict.userSummary);
+  const oppCol = document.createElement("div");
+  oppCol.className = "verdict-side opponent-side";
+  appendVerdictSection(oppCol, "h3", "How the opponent argued");
+  appendVerdictSection(oppCol, "p", verdict.opponentSummary);
+  sides.appendChild(userCol);
+  sides.appendChild(oppCol);
+  verdictContent.appendChild(sides);
 
-  appendVerdictSection(verdictContent, "h3", "How the opponent argued");
-  appendVerdictSection(verdictContent, "p", verdict.opponentSummary);
+  const manip = document.createElement("div");
+  manip.className = "verdict-block";
+  appendVerdictSection(manip, "h3", "Who manipulated");
+  appendVerdictSection(manip, "p", verdict.manipulation);
+  verdictContent.appendChild(manip);
 
-  appendVerdictSection(verdictContent, "h3", "Who manipulated");
-  appendVerdictSection(verdictContent, "p", verdict.manipulation);
-
-  const list = verdict.opponentTechniqueList?.length
-    ? verdict.opponentTechniqueList.map((t) => `${t.name} × ${t.count}`).join(", ")
-    : "The opponent used no techniques.";
-  appendVerdictSection(verdictContent, "h3", "The opponent's full technique list");
-  appendVerdictSection(verdictContent, "p", list);
+  const reveal = document.createElement("div");
+  reveal.className = "verdict-block reveal";
+  appendVerdictSection(reveal, "h3", "Every technique the opponent used");
+  if (verdict.opponentTechniqueList?.length) {
+    const list = document.createElement("ul");
+    list.className = "technique-tally";
+    for (const t of verdict.opponentTechniqueList) {
+      const item = document.createElement("li");
+      const name = document.createElement("span");
+      name.textContent = t.name;
+      const count = document.createElement("span");
+      count.className = "tally-count";
+      count.textContent = `× ${t.count}`;
+      item.appendChild(name);
+      item.appendChild(count);
+      list.appendChild(item);
+    }
+    reveal.appendChild(list);
+  } else {
+    appendVerdictSection(reveal, "p", "The opponent used no techniques.");
+  }
+  verdictContent.appendChild(reveal);
 
   verdictPanel.hidden = false;
+  verdictPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function appendVerdictSection(parent, tag, text) {
@@ -283,7 +353,13 @@ function addAnalysisCard(exchangeNumber, analysis) {
   card.className = "analysis-card";
 
   const summary = document.createElement("summary");
-  summary.textContent = `Exchange ${exchangeNumber} — Show analysis`;
+  const title = document.createElement("span");
+  title.className = "card-title";
+  title.textContent = `Exchange ${exchangeNumber}`;
+  const toggle = document.createElement("span");
+  toggle.className = "card-toggle";
+  summary.appendChild(title);
+  summary.appendChild(toggle);
   card.appendChild(summary);
 
   if (!analysis) {
@@ -314,6 +390,10 @@ function analysisSection(title, lines) {
   heading.textContent = title;
   section.appendChild(heading);
   for (const line of lines) {
+    if (line instanceof Node) {
+      section.appendChild(line);
+      continue;
+    }
     const paragraph = document.createElement("p");
     paragraph.textContent = line;
     section.appendChild(paragraph);
@@ -321,11 +401,42 @@ function analysisSection(title, lines) {
   return section;
 }
 
+// Each technique: its name, the exact quote, and the judge's short note.
 function formatTechniques(list, detailField) {
-  if (!list || !list.length) return ["None spotted."];
-  return list.map(
-    (t) => `“${t.quote}” — ${t.name} (${t[detailField] ?? ""})`.replace(/ \(\)$/, "")
-  );
+  if (!list || !list.length) {
+    const none = document.createElement("p");
+    none.className = "none";
+    none.textContent = "None spotted.";
+    return [none];
+  }
+  return list.map((t) => {
+    const item = document.createElement("div");
+    item.className = "technique";
+    const name = document.createElement("p");
+    name.className = "technique-name";
+    name.textContent = t.name;
+    const detail = t[detailField];
+    if (detailField === "confidence" && detail) {
+      const badge = document.createElement("span");
+      badge.className = `confidence confidence-${detail}`;
+      badge.textContent = detail;
+      name.appendChild(badge);
+    }
+    item.appendChild(name);
+    if (t.quote) {
+      const quote = document.createElement("q");
+      quote.className = "technique-quote";
+      quote.textContent = t.quote;
+      item.appendChild(quote);
+    }
+    if (detailField !== "confidence" && detail) {
+      const note = document.createElement("p");
+      note.className = "technique-note";
+      note.textContent = detail;
+      item.appendChild(note);
+    }
+    return item;
+  });
 }
 
 loadTopics();

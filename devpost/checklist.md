@@ -51,7 +51,7 @@ Agent split: slices 1–4 are built by GLM via `5-build`. Slice 5 is reserved fo
   Learner check: Try sending nothing, then something rude, then break the key in `.env` and restart to see the error message; restore the key.
   Commit: `Handle waiting, empty input, errors and off-topic messages`
 
-- [ ] **5. The debate stage look (Claude session)**
+- [x] **5. The debate stage look (Claude session)**
   Becomes usable: The app looks like a formal debate stage: navy stage, paper panels, one restrained accent, serif headings, distinct speaker voices, the judge column as neutral clerk's notes.
   Why now: Last, by the learner's choice – behavior is settled, so styling cannot break it; done by Claude for design quality.
   PRD ref: `prd.md > Look and Feel`, `prd.md > Screens and Layout`
