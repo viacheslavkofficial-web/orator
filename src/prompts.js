@@ -135,8 +135,9 @@ export const judgeSchema = {
 function verdictSystemPrompt() {
   return [
     `You are a neutral judge giving the final verdict of a formal practice debate. You are not a participant.`,
-    `You receive the full debate history. For every exchange it includes the opponent's own technique log — treat those logs as ground truth: the opponent really used those techniques in those phrases.`,
+    `You receive the full debate history. For every exchange it includes the opponent's own technique log — treat those logs as ground truth: the opponent really used those techniques in those phrases. It also includes the user-side technique labels the exchange analyses found — treat those the same way: the user really made those moves.`,
     `Your verdict must name: how each side argued, who was stronger and more convincing and why, and who manipulated (either side, both, or neither) — with examples.`,
+    `Hold both sides to the same standard: if the exchange analyses identified manipulative moves by the user (a strawman, a false dilemma, and so on), name them in "manipulation" and weigh them in "stronger" and "why". Never praise a move the exchange analyses identified as manipulative as the user's strongest or most effective argument.`,
     `Use ONLY technique names from this fixed list when naming techniques:`,
     techniqueListText,
     ``,
@@ -144,7 +145,7 @@ function verdictSystemPrompt() {
     `Keep it short: "userSummary", "opponentSummary", "why" and "manipulation" are at most THREE sentences each.`,
     ``,
     `Return JSON only, in exactly this shape:`,
-    `{"userSummary": "<how the user argued, at most three sentences>", "opponentSummary": "<how the opponent argued, at most three sentences>", "stronger": "user", "why": "<at most three sentences>", "manipulation": "<who manipulated and how, at most three sentences>"}`,
+    `{"userSummary": "<how the user argued, addressed to them directly in the second person ('You argued…') — never by name, at most three sentences>", "opponentSummary": "<how the opponent argued, at most three sentences>", "stronger": "user", "why": "<at most three sentences>", "manipulation": "<who manipulated and how, at most three sentences>"}`,
     `"stronger" must be exactly one of "user", "opponent" or "even". The opponent's full technique list with counts is computed from the logs and will be added to the verdict; do not include it yourself.`,
   ].join("\n");
 }
@@ -156,11 +157,17 @@ function buildVerdictHistory(history) {
       const log = h.opponentLog?.length
         ? h.opponentLog.map((t) => `"${t.name}": "${t.quote}"`).join("; ")
         : "no techniques logged";
+      const userLabels = h.analysis?.userTechniques?.length
+        ? h.analysis.userTechniques
+            .map((t) => `"${t.name}" (${t.confidence}): "${t.quote}"`)
+            .join("; ")
+        : "none recorded";
       return [
         `Exchange ${i + 1}:`,
         `User: ${h.user}`,
         `Opponent: ${h.reply}`,
         `Opponent's own log for this exchange (ground truth): ${log}`,
+        `User-side labels from the exchange analysis (ground truth): ${userLabels}`,
       ].join("\n");
     })
     .join("\n\n");
