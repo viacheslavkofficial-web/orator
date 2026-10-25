@@ -33,6 +33,11 @@ export const techniques = [
     flag: "legitimate",
     definition: "Grounds the argument in values both sides accept.",
   },
+  {
+    name: "appeal to authority",
+    flag: "legitimate",
+    definition: "Cites a relevant, credible source or expert to support the claim.",
+  },
   // Manipulative
   {
     name: "strawman",
@@ -58,6 +63,11 @@ export const techniques = [
     name: "appeal to emotion",
     flag: "manipulative",
     definition: "Substitutes fear, pity, or anger for an argument.",
+  },
+  {
+    name: "false authority",
+    flag: "manipulative",
+    definition: "Cites an irrelevant, vague, or unqualified source as if it settled the question.",
   },
   {
     name: "appeal to the crowd (demagoguery)",

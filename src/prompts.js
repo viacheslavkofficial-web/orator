@@ -32,7 +32,7 @@ function opponentSystemPrompt({ topic, position, level }) {
     `Return JSON only, in exactly this shape:`,
     `{"reply": "<your reply>", "techniques": [{"name": "<technique name from the allowed list>", "quote": "<exact phrase from your reply>"}], "exposed": [{"name": "<technique name from the list>", "quote_from_user": "<exact phrase from the user's message>"}]}`,
     `The "techniques" array lists ONLY the rhetorical techniques YOU yourself used in your own reply — never a technique you exposed in the user's message. If you merely named or called out a technique in the user's message, that belongs in "exposed", not in "techniques"; never list the same occurrence in both. Every "quote" must be copied word-for-word from your reply. If you used none, return an empty array.`,
-    `The "exposed" array lists techniques you caught in the USER's message (for example a strawman or false dilemma you called out). Every "quote_from_user" must be copied word-for-word from the user's message. Whenever you call out a technique in the user's message, you MUST list it here. If you exposed none, return an empty array.`,
+    `The "exposed" array lists ONLY weak or manipulative moves in the USER's message that you explicitly called out as flawed in your reply (for example a strawman or false dilemma you named and rejected). Merely acknowledging, granting, or agreeing with the user's point — however politely — is NOT exposing it and must NOT be listed here. Every "quote_from_user" must be copied word-for-word from the user's message. If you called out none of the user's moves, return an empty array.`,
   ].join("\n");
 }
 
@@ -79,8 +79,8 @@ function judgeSystemPrompt() {
   return [
     `You are a neutral judge of a practice debate exchange. You are not a participant.`,
     `You receive: the user's message, the opponent's reply, the opponent's own technique log, and the opponent's list of techniques it exposed in the user's message.`,
-    `Treat the opponent's log and exposed list as ground truth: the opponent really used and really exposed those techniques in those phrases. Base every statement about the opponent on them and quote those phrases.`,
-    `For the user's side, infer which techniques from the list they used or seem to have used, and mark each as "clear" or "likely".`,
+    `Treat the opponent's log and exposed list as ground truth: the opponent really used and really exposed those techniques in those phrases. Base every statement about the opponent on them and quote those phrases. "Exposed" here means only weak or manipulative user moves the opponent explicitly called out as flawed — a move the opponent merely acknowledged or conceded is not exposed.`,
+    `For the user's side, infer which techniques from the list they used or seem to have used, and mark each as "clear" or "likely". When the user cites a source, organization, study, or expert, consider "appeal to authority" (relevant and credible) or "false authority" (irrelevant or vague) rather than lumping it into "evidence and examples".`,
     `Use ONLY technique names from this fixed list:`,
     techniqueListText,
     ``,
@@ -90,7 +90,7 @@ function judgeSystemPrompt() {
     ``,
     `Return JSON only, in exactly this shape:`,
     `{"opponentTechniques": [{"name": "<technique>", "quote": "<phrase from the opponent's reply>", "effect": "<one sentence>"}], "userTechniques": [{"name": "<technique>", "quote": "<phrase from the user's message>", "confidence": "clear"}], "opponentExposed": [{"name": "<technique>", "quote": "<phrase from the user's message>", "effect": "<one sentence>"}], "whatWorked": "<at most three sentences>", "assessment": "<at most three sentences>"}`,
-    `The userTechniques confidence is "clear" or "likely". All five top-level fields are required; the arrays may be empty. "opponentExposed" mirrors the opponent's exposed list — include an entry for every exposed technique, quoting the user's message.`,
+    `The userTechniques confidence is "clear" or "likely". All five top-level fields are required; the arrays may be empty. "opponentExposed" mirrors the opponent's exposed list — include an entry for every exposed technique, quoting the user's message. Remember: exposed means explicitly called out as flawed, never merely acknowledged.`,
   ].join("\n");
 }
 

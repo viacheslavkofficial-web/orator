@@ -71,8 +71,8 @@ The fixed list of eight topics from `prd.md > Setup`, each with `id`, `title`, a
 
 ### Techniques (`src/techniques.js`)
 A fixed list of named techniques, each with a one-line definition and a flag: `legitimate` or `manipulative`. Starting list:
-- Legitimate: evidence and examples, concession and pivot, reframing, analogy, rhetorical question, appeal to shared values.
-- Manipulative: strawman, false dilemma, slippery slope, red herring / whataboutism, appeal to emotion, appeal to the crowd (demagoguery), loaded question, cherry-picking, moving the goalposts, quibbling over wording, turning the speaker's words against them, ad hominem.
+- Legitimate: evidence and examples, concession and pivot, reframing, analogy, rhetorical question, appeal to shared values, appeal to authority.
+- Manipulative: strawman, false dilemma, slippery slope, red herring / whataboutism, appeal to emotion, false authority, appeal to the crowd (demagoguery), loaded question, cherry-picking, moving the goalposts, quibbling over wording, turning the speaker's words against them, ad hominem.
 The opponent may only log techniques from this list. The judge uses the same list for the user and may say "appears to use".
 PRD ref: `prd.md > The opponent's technique log`.
 
