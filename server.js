@@ -54,26 +54,48 @@ function quoteMatches(quote, source) {
   return normalizeForQuoteMatch(source).includes(normalizeForQuoteMatch(quote));
 }
 
+// A "techniques" entry whose quote is really about the user's message — it
+// names or rebuts a flaw in it ("your claim…", "to suggest we…") or simply
+// quotes the user's own words back — is a call-out, not the opponent's own
+// move. It gets moved to "exposed".
+const CALLOUT_PATTERNS =
+  /\b(your claim|your argument|your position|your logic|your framing|your wording|your side|your own words|your suggestion|you claim|you suggest|you argue|you admit|you imply|you are saying|are you saying|to suggest|so you want|you want us|dodging the question|that is a strawman|that cherry-pick)\b/i;
+
+function quoteDescribesUserMessage(quote, userMessage) {
+  const text = String(quote ?? "");
+  return CALLOUT_PATTERNS.test(text) || quoteMatches(text, userMessage);
+}
+
 // The opponent may only log known, level-allowed techniques, and every logged
-// quote must match its reply (after normalization). A log entry that still
-// does not match is DROPPED rather than failing the whole turn — the user
-// retries themselves if they care; the judge's ground truth stays checkable.
+// quote must match its reply (after normalization). Entries that are actually
+// call-outs of the user's message are MOVED to "exposed"; anything else that
+// still does not match is DROPPED rather than failing the whole turn — the
+// judge's ground truth stays checkable.
 function sanitizeOpponentResult(result, reply, userMessage, level) {
   const allowed = new Set(level.allowed.map((n) => n.toLowerCase()));
-  const techniques = (Array.isArray(result.techniques) ? result.techniques : []).filter(
-    (t) =>
-      t &&
-      isKnownTechnique(t.name) &&
+  const techniques = [];
+  const movedToExposed = [];
+  for (const t of Array.isArray(result.techniques) ? result.techniques : []) {
+    if (!t || !isKnownTechnique(t.name) || typeof t.quote !== "string") continue;
+    if (quoteDescribesUserMessage(t.quote, userMessage)) {
+      movedToExposed.push({ name: t.name, quote_from_user: t.quote, moved: true });
+      continue;
+    }
+    if (
       allowed.has(String(t.name).toLowerCase()) &&
-      typeof t.quote === "string" &&
       quoteMatches(t.quote, reply)
-  );
-  const exposed = (Array.isArray(result.exposed) ? result.exposed : []).filter(
-    (t) =>
-      t &&
-      isKnownTechnique(t.name) &&
-      typeof t.quote_from_user === "string" &&
-      quoteMatches(t.quote_from_user, userMessage)
+    ) {
+      techniques.push({ name: t.name, quote: t.quote });
+    }
+  }
+  const exposed = movedToExposed.concat(
+    (Array.isArray(result.exposed) ? result.exposed : []).filter(
+      (t) =>
+        t &&
+        isKnownTechnique(t.name) &&
+        typeof t.quote_from_user === "string" &&
+        (quoteMatches(t.quote_from_user, userMessage) || t.moved === true)
+    )
   );
   return { techniques, exposed };
 }
