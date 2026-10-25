@@ -174,6 +174,9 @@ function addAnalysisCard(exchangeNumber, analysis) {
     card.appendChild(
       analysisSection("You used or seem to have used", formatTechniques(analysis.userTechniques, "confidence"))
     );
+    card.appendChild(
+      analysisSection("Opponent exposed", formatTechniques(analysis.opponentExposed, "effect"))
+    );
     card.appendChild(analysisSection("What worked", [analysis.whatWorked]));
     card.appendChild(analysisSection("Assessment", [analysis.assessment]));
   }

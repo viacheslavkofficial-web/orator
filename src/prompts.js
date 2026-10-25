@@ -22,12 +22,13 @@ function opponentSystemPrompt({ topic, position, levelPersona }) {
     `- If the user's message is off-topic, one-word, or rude, say briefly that this dilutes the topic and invite them back to the argument; stay in role.`,
     `- You must never break character or mention being an AI.`,
     ``,
-    `With your reply, log which rhetorical techniques you deliberately used. Choose ONLY from this fixed list:`,
+    `With your reply, log which rhetorical techniques you used. Choose ONLY from this fixed list:`,
     techniqueListText,
     ``,
     `Return JSON only, in exactly this shape:`,
-    `{"reply": "<your reply>", "techniques": [{"name": "<technique name from the list>", "quote": "<exact phrase from your reply>"}]}`,
-    `Every "quote" must be copied word-for-word from your reply. If you used none, return an empty array.`,
+    `{"reply": "<your reply>", "techniques": [{"name": "<technique name from the list>", "quote": "<exact phrase from your reply>"}], "exposed": [{"name": "<technique name from the list>", "quote_from_user": "<exact phrase from the user's message>"}]}`,
+    `The "techniques" array lists ONLY the rhetorical techniques YOU yourself used in your own reply — never a technique you exposed in the user's message. If you merely named or called out a technique in the user's message, that belongs in "exposed", not in "techniques"; never list the same occurrence in both. Every "quote" must be copied word-for-word from your reply. If you used none, return an empty array.`,
+    `The "exposed" array lists techniques you caught in the USER's message (for example a strawman or false dilemma you called out). Every "quote_from_user" must be copied word-for-word from the user's message. Whenever you call out a technique in the user's message, you MUST list it here. If you exposed none, return an empty array.`,
   ].join("\n");
 }
 
@@ -73,7 +74,7 @@ export function resolveLevel(setup, topics) {
     topic,
     position,
     persona:
-      "Level: Friendly. You are maximally correct and polite. You never manipulate; you argue your side honestly with legitimate techniques only.",
+      "Level: Friendly. You are maximally correct and polite. You never manipulate; you argue your side honestly with legitimate techniques only. Never use loaded questions, and never ask questions that imply bad motives on the user's part (for example \"is your goal genuinely X, or simply Y?\"). Ask questions only to genuinely clarify or to make a substantive point.",
   };
 }
 
@@ -82,22 +83,23 @@ export function resolveLevel(setup, topics) {
 function judgeSystemPrompt() {
   return [
     `You are a neutral judge of a practice debate exchange. You are not a participant.`,
-    `You receive: the user's message, the opponent's reply, and the opponent's own technique log.`,
-    `Treat the opponent's log as ground truth: the opponent really used those techniques in those phrases. Base every statement about the opponent on the log and quote the logged phrases.`,
+    `You receive: the user's message, the opponent's reply, the opponent's own technique log, and the opponent's list of techniques it exposed in the user's message.`,
+    `Treat the opponent's log and exposed list as ground truth: the opponent really used and really exposed those techniques in those phrases. Base every statement about the opponent on them and quote those phrases.`,
     `For the user's side, infer which techniques from the list they used or seem to have used, and mark each as "clear" or "likely".`,
     `Use ONLY technique names from this fixed list:`,
     techniqueListText,
     ``,
     `If the user was rude or off-topic, say plainly that in front of an audience this would look ridiculous.`,
     `Write in English. Be concrete and fair; no numeric scores.`,
+    `Keep it short: every technique's "effect" is at most ONE sentence; "whatWorked" and "assessment" are at most THREE sentences each.`,
     ``,
     `Return JSON only, in exactly this shape:`,
-    `{"opponentTechniques": [{"name": "<technique>", "quote": "<phrase from the opponent's reply>", "effect": "<what the technique did in the argument>"}], "userTechniques": [{"name": "<technique>", "quote": "<phrase from the user's message>", "confidence": "clear"}], "whatWorked": "<what worked and what did not, for both sides>", "assessment": "<short assessment of the exchange>"}`,
-    `The userTechniques confidence is "clear" or "likely". All four top-level fields are required; the arrays may be empty.`,
+    `{"opponentTechniques": [{"name": "<technique>", "quote": "<phrase from the opponent's reply>", "effect": "<one sentence>"}], "userTechniques": [{"name": "<technique>", "quote": "<phrase from the user's message>", "confidence": "clear"}], "opponentExposed": [{"name": "<technique>", "quote": "<phrase from the user's message>", "effect": "<one sentence>"}], "whatWorked": "<at most three sentences>", "assessment": "<at most three sentences>"}`,
+    `The userTechniques confidence is "clear" or "likely". All five top-level fields are required; the arrays may be empty. "opponentExposed" mirrors the opponent's exposed list — include an entry for every exposed technique, quoting the user's message.`,
   ].join("\n");
 }
 
-export function judgePrompt({ userMessage, reply, opponentLog }) {
+export function judgePrompt({ userMessage, reply, opponentLog, exposed }) {
   const system = judgeSystemPrompt();
   const input = [
     `User's message: ${userMessage}`,
@@ -110,10 +112,23 @@ export function judgePrompt({ userMessage, reply, opponentLog }) {
           .map((t) => `- "${t.name}" in the phrase: "${t.quote}"`)
           .join("\n")
       : "(empty — the opponent logged no techniques)",
+    ``,
+    `Techniques the opponent exposed in the user's message (ground truth):`,
+    exposed?.length
+      ? exposed
+          .map((t) => `- "${t.name}" in the phrase: "${t.quote_from_user}"`)
+          .join("\n")
+      : "(empty — the opponent exposed nothing)",
   ].join("\n");
   return { system, input };
 }
 
 export const judgeSchema = {
-  required: ["opponentTechniques", "userTechniques", "whatWorked", "assessment"],
+  required: [
+    "opponentTechniques",
+    "userTechniques",
+    "opponentExposed",
+    "whatWorked",
+    "assessment",
+  ],
 };
