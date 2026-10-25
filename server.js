@@ -10,9 +10,13 @@ import {
   opponentSchema,
   judgePrompt,
   judgeSchema,
+  verdictPrompt,
+  verdictSchema,
   resolveLevel,
 } from "./src/prompts.js";
 import { isKnownTechnique } from "./src/techniques.js";
+
+const MAX_EXCHANGES = 10;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -36,15 +40,17 @@ app.get("/api/topics", (req, res) => {
 // an exact substring of its reply — otherwise the judge's ground truth is not
 // checkable. "exposed" entries must quote the user's message. One retry, then
 // a readable failure.
-function opponentLogIsValid(result, reply, userMessage) {
+function opponentLogIsValid(result, reply, userMessage, level) {
   if (typeof result.reply !== "string" || !result.reply.trim()) return false;
   if (!Array.isArray(result.techniques)) return false;
   if (!Array.isArray(result.exposed ?? [])) return false;
+  const allowed = new Set(level.allowed.map((n) => n.toLowerCase()));
   return (
     result.techniques.every(
       (t) =>
         t &&
         isKnownTechnique(t.name) &&
+        allowed.has(String(t.name).toLowerCase()) &&
         typeof t.quote === "string" &&
         reply.includes(t.quote)
     ) &&
@@ -107,11 +113,22 @@ function countSentences(text) {
 app.post("/api/turn", async (req, res) => {
   const { setup, history, message } = req.body ?? {};
   const level = resolveLevel(setup ?? {}, topics);
-  if (!level || typeof message !== "string" || !message.trim()) {
+  if (
+    !level ||
+    typeof message !== "string" ||
+    !message.trim() ||
+    !Array.isArray(history) ||
+    history.length > MAX_EXCHANGES
+  ) {
     return res.status(400).json({ error: "Invalid debate turn request." });
   }
+  if (history.length >= MAX_EXCHANGES) {
+    return res
+      .status(400)
+      .json({ error: `The debate is over after ${MAX_EXCHANGES} exchanges.` });
+  }
   try {
-    const prompt = opponentPrompt({ setup, history: history ?? [], message, level });
+    const prompt = opponentPrompt({ setup, history, message, level });
 
     let result = null;
     let lastError = null;
@@ -121,7 +138,7 @@ app.post("/api/turn", async (req, res) => {
         input: prompt.input,
         schema: opponentSchema,
       });
-      if (opponentLogIsValid(result, result.reply, message)) {
+      if (opponentLogIsValid(result, result.reply, message, level)) {
         lastError = null;
         break;
       }
@@ -163,6 +180,58 @@ app.post("/api/turn", async (req, res) => {
   } catch (err) {
     const status = err.status ?? 500;
     if (status >= 500) console.error("Turn failed:", err.message);
+    res.status(status).json({ error: err.message || "The model call failed." });
+  }
+});
+
+// The opponent's full technique list is computed from its own logs — ground
+// truth by construction — rather than asked from the model.
+function countOpponentTechniques(history) {
+  const counts = new Map();
+  for (const entry of history ?? []) {
+    for (const t of entry.opponentLog ?? []) {
+      const name = String(t.name).toLowerCase();
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()].map(([name, count]) => ({ name, count }));
+}
+
+app.post("/api/verdict", async (req, res) => {
+  const { setup, history } = req.body ?? {};
+  const level = resolveLevel(setup ?? {}, topics);
+  if (!level || !Array.isArray(history) || !history.length) {
+    return res.status(400).json({ error: "Invalid verdict request." });
+  }
+  try {
+    const prompt = verdictPrompt({ setup, level, history });
+    let verdict = null;
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      verdict = await callJson({
+        system: prompt.system,
+        input: prompt.input,
+        schema: verdictSchema,
+      });
+      const strongerOk = ["user", "opponent", "even"].includes(verdict.stronger);
+      const brevityOk =
+        countSentences(verdict.userSummary) <= 3 &&
+        countSentences(verdict.opponentSummary) <= 3 &&
+        countSentences(verdict.why) <= 3 &&
+        countSentences(verdict.manipulation) <= 3;
+      if (strongerOk && brevityOk) {
+        lastError = null;
+        break;
+      }
+      lastError = new Error("The verdict did not check out.");
+      lastError.status = 500;
+    }
+    if (lastError) throw lastError;
+
+    res.json({ ...verdict, opponentTechniqueList: countOpponentTechniques(history) });
+  } catch (err) {
+    const status = err.status ?? 500;
+    if (status >= 500) console.error("Verdict failed:", err.message);
     res.status(status).json({ error: err.message || "The model call failed." });
   }
 });

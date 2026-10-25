@@ -43,6 +43,25 @@ button:disabled {
   opacity: 0.5;
 }
 
+#debate-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+#header-topic {
+  font-weight: bold;
+}
+
+#header-counter {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 #debate-layout {
   display: flex;
   gap: 0.75rem;
@@ -70,6 +89,25 @@ button:disabled {
   font-size: 1rem;
   margin: 0.75rem 0 0.25rem;
   color: #555;
+}
+
+#verdict-panel {
+  border: 1px solid #999;
+  background: #fff;
+  padding: 1rem;
+  margin-top: 0.75rem;
+}
+
+#verdict-panel h2 {
+  margin-top: 0;
+}
+
+#verdict-panel h3 {
+  margin: 0.75rem 0 0.15rem;
+}
+
+#verdict-panel p {
+  margin: 0.15rem 0;
 }
 
 .analysis-card {

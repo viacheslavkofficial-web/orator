@@ -30,6 +30,8 @@
           Opponent level
           <select id="level-select">
             <option value="friendly">Friendly</option>
+            <option value="strict">Strict</option>
+            <option value="hostile">Hostile</option>
           </select>
         </label>
         <button type="submit" id="start-button" disabled>Start the debate</button>
@@ -38,7 +40,13 @@
 
     <!-- Debate screen -->
     <section id="debate-screen" hidden>
-      <h1 id="debate-title"></h1>
+      <div id="debate-header">
+        <span id="header-topic"></span>
+        <span id="header-position"></span>
+        <span id="header-level"></span>
+        <span id="header-counter">0 / 10</span>
+        <button type="button" id="stop-button" disabled>Stop</button>
+      </div>
       <div id="debate-layout">
         <div id="chat-panel" aria-live="polite"></div>
         <aside id="analysis-column">
@@ -50,6 +58,11 @@
         <textarea id="message-input" rows="3" placeholder="Your argument…"></textarea>
         <button type="submit" id="send-button">Send</button>
       </form>
+      <section id="verdict-panel" hidden>
+        <h2>Final verdict</h2>
+        <div id="verdict-content"></div>
+        <button type="button" id="new-debate-button">New debate</button>
+      </section>
     </section>
   </main>
   <script src="app.js"></script>

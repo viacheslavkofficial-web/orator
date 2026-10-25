@@ -3,6 +3,7 @@
 // the judge reads the opponent's techniques from the opponent's own log.
 
 import { techniques } from "./techniques.js";
+import { getLevel } from "./levels.js";
 
 const techniqueListText = techniques
   .map((t) => `- "${t.name}" (${t.flag}): ${t.definition}`)
@@ -10,11 +11,14 @@ const techniqueListText = techniques
 
 // --- Opponent -------------------------------------------------------------
 
-function opponentSystemPrompt({ topic, position, levelPersona }) {
+function opponentSystemPrompt({ topic, position, level }) {
+  const allowedText = level.allowed
+    .map((name) => `- "${name}"`)
+    .join("\n");
   return [
     `You are the opponent in a formal practice debate, playing a single role. You argue ${position.label.toLowerCase()} — the position opposite to the user's.`,
     `Topic: ${topic.title}.`,
-    levelPersona,
+    level.persona,
     `Rules:`,
     `- Reply in English only.`,
     `- Directly address the user's actual argument. Never give a generic speech.`,
@@ -22,11 +26,11 @@ function opponentSystemPrompt({ topic, position, levelPersona }) {
     `- If the user's message is off-topic, one-word, or rude, say briefly that this dilutes the topic and invite them back to the argument; stay in role.`,
     `- You must never break character or mention being an AI.`,
     ``,
-    `With your reply, log which rhetorical techniques you used. Choose ONLY from this fixed list:`,
-    techniqueListText,
+    `With your reply, log which rhetorical techniques you used. At this level you may ONLY use and log these techniques:`,
+    allowedText,
     ``,
     `Return JSON only, in exactly this shape:`,
-    `{"reply": "<your reply>", "techniques": [{"name": "<technique name from the list>", "quote": "<exact phrase from your reply>"}], "exposed": [{"name": "<technique name from the list>", "quote_from_user": "<exact phrase from the user's message>"}]}`,
+    `{"reply": "<your reply>", "techniques": [{"name": "<technique name from the allowed list>", "quote": "<exact phrase from your reply>"}], "exposed": [{"name": "<technique name from the list>", "quote_from_user": "<exact phrase from the user's message>"}]}`,
     `The "techniques" array lists ONLY the rhetorical techniques YOU yourself used in your own reply — never a technique you exposed in the user's message. If you merely named or called out a technique in the user's message, that belongs in "exposed", not in "techniques"; never list the same occurrence in both. Every "quote" must be copied word-for-word from your reply. If you used none, return an empty array.`,
     `The "exposed" array lists techniques you caught in the USER's message (for example a strawman or false dilemma you called out). Every "quote_from_user" must be copied word-for-word from the user's message. Whenever you call out a technique in the user's message, you MUST list it here. If you exposed none, return an empty array.`,
   ].join("\n");
@@ -43,12 +47,7 @@ function buildHistoryText(history) {
 }
 
 export function opponentPrompt({ setup, history, message, level }) {
-  const { topic, position, persona } = level; // resolved by the caller
-  const system = opponentSystemPrompt({
-    topic,
-    position,
-    levelPersona: persona,
-  });
+  const system = opponentSystemPrompt({ topic: level.topic, position: level.position, level });
   const input = [
     `The debater you are arguing against is called ${setup.name}.`,
     ``,
@@ -62,20 +61,16 @@ export function opponentPrompt({ setup, history, message, level }) {
 
 export const opponentSchema = { required: ["reply", "techniques"] };
 
-// The resolved level (topic + opponent position + persona) is assembled here
-// so server.js stays thin. Slice 3 replaces the fixed Friendly persona with
-// src/levels.js.
+// The resolved level (topic + opponent position + persona + allowed
+// techniques) is assembled here so server.js stays thin.
 export function resolveLevel(setup, topics) {
   const topic = topics.find((t) => t.id === setup.topicId);
   if (!topic) return null;
   const position = topic.positions.find((p) => p.id !== setup.positionId);
   if (!position) return null;
-  return {
-    topic,
-    position,
-    persona:
-      "Level: Friendly. You are maximally correct and polite. You never manipulate; you argue your side honestly with legitimate techniques only. Never use loaded questions, and never ask questions that imply bad motives on the user's part (for example \"is your goal genuinely X, or simply Y?\"). Ask questions only to genuinely clarify or to make a substantive point.",
-  };
+  const level = getLevel(setup.level);
+  if (!level) return null;
+  return { ...level, topic, position };
 }
 
 // --- Judge (per exchange) ---------------------------------------------------
@@ -131,4 +126,57 @@ export const judgeSchema = {
     "whatWorked",
     "assessment",
   ],
+};
+
+// --- Judge (final verdict) ---------------------------------------------------
+
+function verdictSystemPrompt() {
+  return [
+    `You are a neutral judge giving the final verdict of a formal practice debate. You are not a participant.`,
+    `You receive the full debate history. For every exchange it includes the opponent's own technique log — treat those logs as ground truth: the opponent really used those techniques in those phrases.`,
+    `Your verdict must name: how each side argued, who was stronger and more convincing and why, and who manipulated (either side, both, or neither) — with examples.`,
+    `Use ONLY technique names from this fixed list when naming techniques:`,
+    techniqueListText,
+    ``,
+    `Write in English. Be concrete and fair; no numeric scores, a verbal verdict only.`,
+    `Keep it short: "userSummary", "opponentSummary", "why" and "manipulation" are at most THREE sentences each.`,
+    ``,
+    `Return JSON only, in exactly this shape:`,
+    `{"userSummary": "<how the user argued, at most three sentences>", "opponentSummary": "<how the opponent argued, at most three sentences>", "stronger": "user", "why": "<at most three sentences>", "manipulation": "<who manipulated and how, at most three sentences>"}`,
+    `"stronger" must be exactly one of "user", "opponent" or "even". The opponent's full technique list with counts is computed from the logs and will be added to the verdict; do not include it yourself.`,
+  ].join("\n");
+}
+
+function buildVerdictHistory(history) {
+  if (!history.length) return "The debate had no exchanges.";
+  return history
+    .map((h, i) => {
+      const log = h.opponentLog?.length
+        ? h.opponentLog.map((t) => `"${t.name}": "${t.quote}"`).join("; ")
+        : "no techniques logged";
+      return [
+        `Exchange ${i + 1}:`,
+        `User: ${h.user}`,
+        `Opponent: ${h.reply}`,
+        `Opponent's own log for this exchange (ground truth): ${log}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+export function verdictPrompt({ setup, level, history }) {
+  const system = verdictSystemPrompt();
+  const input = [
+    `The debater is called ${setup.name} and argued: ${level.position.label}`,
+    `The opponent (you are judging the debate, not participating) argued: ${level.topic.positions.find((p) => p.id !== setup.positionId)?.label ?? "the opposite position"}`,
+    `Topic: ${level.topic.title}. Opponent level: ${level.label}.`,
+    ``,
+    `Full debate history with the opponent's logs:`,
+    buildVerdictHistory(history),
+  ].join("\n");
+  return { system, input };
+}
+
+export const verdictSchema = {
+  required: ["userSummary", "opponentSummary", "stronger", "why", "manipulation"],
 };
