@@ -303,5 +303,5 @@ app.post("/api/verdict", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Rhetoric Sparring running at http://localhost:${PORT}`);
+  console.log(`Orator running at http://localhost:${PORT}`);
 });

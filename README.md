@@ -1,4 +1,4 @@
-# Rhetoric Sparring
+# Orator
 
 A debate sparring app: argue a topic against an AI opponent while a neutral AI
 judge analyzes every exchange — which rhetorical techniques each side used,

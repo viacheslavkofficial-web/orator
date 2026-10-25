@@ -3,7 +3,7 @@ doc: prd
 status: approved
 ---
 
-# Rhetoric Sparring – Product Requirements
+# Orator – Product Requirements
 
 A web app where international relations students and early-career negotiators argue a topic against an AI opponent while a neutral AI judge shows which rhetorical techniques each side used, who manipulated, and who was more convincing.
 Source: `scope.md > The Unique Kernel`, `scope.md > Who It's For`.
@@ -120,4 +120,4 @@ Setup screen; debate screen with chat and the analysis column; three opponent le
 - Numeric scoring or leaderboards.
 
 ## Open Questions
-- Final project name – can wait until `6-ship`.
+- Final project name – resolved pre-ship: **Orator**.

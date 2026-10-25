@@ -3,7 +3,7 @@ doc: scope
 status: approved
 ---
 
-# Rhetoric Sparring (working title)
+# Orator
 
 A debate sparring app: you argue a topic against an AI opponent, while a neutral AI judge analyzes every exchange and tells you who used which rhetorical technique, who manipulated, and who was more convincing.
 

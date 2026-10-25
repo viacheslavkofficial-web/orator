@@ -3,7 +3,7 @@ doc: spec
 status: approved
 ---
 
-# Rhetoric Sparring – Technical Spec
+# Orator – Technical Spec
 
 ## How This Works, In Plain Language
 The app has two parts. The page is what you see in the browser tab: setup, the debate chat, the analysis column, the verdict. The server is a small program on your computer that keeps the Z.ai API key secret and talks to the GLM model; the page never sees the key.
@@ -180,4 +180,4 @@ Recommended slice order for `5-build` (kernel early):
 - No deployment – learner asked whether the rules require it; they don't (see `Where It Runs and How Someone Tries It`).
 - Learner uncertainty discussed: whether a model is good enough to detect rhetorical techniques and manipulation. Clarified by design: the opponent logs its own techniques, so the judge's statements about the opponent are ground truth; only the user's techniques are inferred, with a "clear / likely" confidence. Checked in slice 2: every opponent technique the judge names must match the log, and every quote must appear in the reply.
 - Open: JSON mode and thinking switch on `glm-5.3-flash` (see Stack) – verify in slice 1.
-- Open: project name – can wait until `6-ship` (from `prd.md > Open Questions`).
+- Open: project name – resolved pre-ship: **Orator** (from `prd.md > Open Questions`).
