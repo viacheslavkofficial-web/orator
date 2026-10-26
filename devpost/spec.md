@@ -48,6 +48,7 @@ To verify at the very start of the build: (1) the key works on `z-ai/glm-5.3-fla
   ```
   Open http://localhost:3000.
 - Demo recording: a screen recording of the browser tab running the core journey (see `prd.md > The Core Journey`), uploaded to YouTube, under 3 minutes.
+- Public repository: https://github.com/viacheslavkofficial-web/orator (created and pushed pre-ship; branch `master`).
 - Deployment: none. The hackathon's judging criteria (Design, Potential Impact, Innovation/Idea, Presentation) contain nothing about deployment, and the rules say reviewers won't clone or run code and may judge from the video and description alone. A local app plus the video is sufficient.
 
 ## Look and Feel
