@@ -68,25 +68,25 @@ Agent split: slices 1–4 are built by GLM via `5-build`. Slice 5 is reserved fo
 
 ## Final Review
 
-- [ ] Final review fix 1 – "exposed" tightened: only weak or manipulative user moves that the opponent explicitly called out as flawed; acknowledging or conceding a point is not exposing it (opponent prompt + judge mirroring)
-- [ ] Final review fix 2 – "appeal to authority" (legitimate) and "false authority" (manipulative) added to the technique vocabulary and level allowances
-- [ ] Final review fix 3 – judge analyzes the user's message independently, before seeing the opponent's exposed list (it copied the opponent's "analogy" label and missed the strawman); one quote may carry several labels; escalate to a separate user-side model call if prompt fixes miss the strawman
-- [ ] Final review fix 4 – verdict addresses the user in the second person ("You argued…", not "John argued…") and weighs the user's manipulation consistently with the exchange analyses (a move the analyses labeled manipulative must not be praised as the user's strongest argument)
-- [ ] Final review fix 5 – the opponent logged its call-outs of the user's moves as its own techniques (the user's "every serious study" claim logged as the opponent's "cherry-picking"; its strawman rebuttal logged as "quibbling over wording"), leaving "exposed" empty. Opponent prompt now: any sentence whose purpose is to name or rebut a flaw in the user's message goes into "exposed" with the user's technique it exposes, never into "techniques". Server validation moves a "techniques" entry whose quote describes the user's message ("your claim…", "to suggest…", or quoting the user's words) into "exposed". Fallback if one re-verification still misfires: drop the "Opponent exposed" card section and stop feeding exposed to the judge.
-- [ ] Final review fix 6 – the second-person rule leaked into opponentSummary ("You challenged the user's…"). Verdict voice convention: the user is always "you/your" (never the name, never "the user"), the opponent is always third person ("The opponent…"); opponentSummary must not use second person for the opponent
-- [ ] Final review complete – feedback resolved and learner confirms ready to ship
+- [x] Final review fix 1 – "exposed" tightened: only weak or manipulative user moves that the opponent explicitly called out as flawed; acknowledging or conceding a point is not exposing it (opponent prompt + judge mirroring)
+- [x] Final review fix 2 – "appeal to authority" (legitimate) and "false authority" (manipulative) added to the technique vocabulary and level allowances
+- [x] Final review fix 3 – judge analyzes the user's message independently, before seeing the opponent's exposed list (it copied the opponent's "analogy" label and missed the strawman); one quote may carry several labels; escalate to a separate user-side model call if prompt fixes miss the strawman
+- [x] Final review fix 4 – verdict addresses the user in the second person ("You argued…", not "John argued…") and weighs the user's manipulation consistently with the exchange analyses (a move the analyses labeled manipulative must not be praised as the user's strongest argument)
+- [x] Final review fix 5 – the opponent logged its call-outs of the user's moves as its own techniques (the user's "every serious study" claim logged as the opponent's "cherry-picking"; its strawman rebuttal logged as "quibbling over wording"), leaving "exposed" empty. Opponent prompt now: any sentence whose purpose is to name or rebut a flaw in the user's message goes into "exposed" with the user's technique it exposes, never into "techniques". Server validation moves a "techniques" entry whose quote describes the user's message ("your claim…", "to suggest…", or quoting the user's words) into "exposed". Fallback if one re-verification still misfires: drop the "Opponent exposed" card section and stop feeding exposed to the judge.
+- [x] Final review fix 6 – the second-person rule leaked into opponentSummary ("You challenged the user's…"). Verdict voice convention: the user is always "you/your" (never the name, never "the user"), the opponent is always third person ("The opponent…"); opponentSummary must not use second person for the opponent
+- [x] Final review complete – feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete – guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed – offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete – guided route, focused alternative, prior practice connected, or brief recap
+- [x] Optional edit and transfer reflection addressed – offered/declined/already covered/not applicable as appropriate
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence:
-Route and stops:
-Edit outcome:
-Reflection:
-Activity mode:
+Activity and evidence: Focused-alternative recap (experienced plan-first user). The learner's own final-review debugging served as the hands-on practice: they traced three model-behavior bugs from observed exchanges to their causes and specified the fixes (fix 3: the judge anchoring on the opponent's labels; fix 5: call-outs misrouted into the opponent's technique log; fix 6: the verdict-voice leak). Evidence: `checklist.md > Revisions` (fixes 3, 5, 6) and the re-verification results recorded there.
+Route and stops: Reference route (not toured interactively, labeled as such in the map): `public/app.js` turnForm submit handler → `server.js` `POST /api/turn` → `src/llm.js` `callJson` → collapsed analysis card via `addAnalysisCard`.
+Edit outcome: No optional edit — the final-review fix work itself was the hands-on practice; pre-ship time-box.
+Reflection: Transfer question ("What would you do differently next time you start with an agent?") offered in chat at handoff; response pending.
+Activity mode: Focused alternative (evidence-based recap) + generated app map.
 
 ## Revisions
 

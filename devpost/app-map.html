@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orator — App Map</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: Georgia, "Times New Roman", serif; background: #14213d; color: #1c1c1c; margin: 0; }
+  main { max-width: 860px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+  header { color: #f4f2ee; margin-bottom: 1.5rem; }
+  header h1 { margin: 0 0 0.25rem; font-size: 1.8rem; }
+  header p { margin: 0; color: #cfd6e4; }
+  section { background: #fbfbf8; border: 1px solid #d8d4ca; border-radius: 4px; padding: 1.25rem 1.5rem; margin: 1.25rem 0; }
+  h2 { font-size: 1.15rem; margin-top: 0; border-bottom: 2px solid #7a1f2b; padding-bottom: 0.3rem; }
+  code { font-family: Consolas, "Courier New", monospace; background: #efede6; border: 1px solid #ddd8cc; border-radius: 3px; padding: 0.05rem 0.3rem; font-size: 0.92em; }
+  .flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: stretch; }
+  .stage { border: 1px solid #d8d4ca; border-left: 4px solid #7a1f2b; background: #fff; padding: 0.6rem 0.8rem; flex: 1 1 150px; }
+  .stage b { display: block; font-size: 0.95rem; }
+  .stage span { font-size: 0.85rem; color: #55503f; }
+  .arrow { align-self: center; color: #7a1f2b; font-weight: bold; font-size: 1.2rem; }
+  ol.route li { margin: 0.6rem 0; }
+  details { border-top: 1px solid #e2ded2; padding-top: 0.6rem; margin-top: 0.6rem; }
+  summary { cursor: pointer; font-weight: bold; }
+  ul.change-list li { margin: 0.5rem 0; }
+  footer { color: #cfd6e4; font-size: 0.85rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Orator — App Map</h1>
+    <p>A snapshot guide to how the code fits together. Generated at the end of the build; the code can drift past this commit.</p>
+  </header>
+
+  <section>
+    <h2>What the app is</h2>
+    <p>Orator is a debate sparring app. You pick a motion, a side, and an opponent level (Friendly, Strict, Hostile), argue in a chat, and a neutral judge analyzes every exchange: which rhetorical techniques each side used, who manipulated, and — after Stop or 10 exchanges — a final verdict. The opponent logs its own techniques as it argues, so the judge's statements about the opponent are ground truth, not guesses.</p>
+    <p>The main pieces:</p>
+    <ul>
+      <li><code>public/</code> — the page: setup screen, debate stage, judge's column, verdict panel (<code>index.html</code>, <code>app.js</code>, <code>styles.css</code>). All state lives in the browser; nothing is saved.</li>
+      <li><code>server.js</code> — Express server: three API routes, plus all validation of what the model returns.</li>
+      <li><code>src/prompts.js</code> — the three role prompts (opponent, exchange judge, verdict) and their JSON shapes.</li>
+      <li><code>src/llm.js</code> — the only file that talks to the model API (OpenRouter by default, GLM-5.3-flash), with JSON mode and one retry.</li>
+      <li><code>src/techniques.js</code> — the fixed vocabulary of 20 rhetorical techniques; <code>src/levels.js</code> — the three opponent personas; <code>src/topics.js</code> — the eight motions.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>One action, end to end: sending an argument</h2>
+    <div class="flow">
+      <div class="stage"><b>You send an argument</b><span>debate stage input</span></div>
+      <div class="arrow">&#8594;</div>
+      <div class="stage"><b><code>public/app.js</code></b><span><code>turnForm</code> submit handler posts <code>/api/turn</code> with setup, history, message</span></div>
+      <div class="arrow">&#8594;</div>
+      <div class="stage"><b><code>server.js</code></b><span><code>POST /api/turn</code>: calls opponent, sanitizes the log (<code>sanitizeOpponentResult</code>), calls the judge</span></div>
+      <div class="arrow">&#8594;</div>
+      <div class="stage"><b><code>src/llm.js</code></b><span><code>callJson</code> — one JSON-mode call per role, one retry on bad JSON</span></div>
+      <div class="arrow">&#8594;</div>
+      <div class="stage"><b>Result</b><span>reply in the chat + collapsed analysis card (<code>addAnalysisCard</code>)</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Reference route through the code</h2>
+    <p>This route was not toured interactively — use it as a reading order.</p>
+    <ol class="route">
+      <li><code>public/app.js</code> — find <code>turnForm.addEventListener("submit", …)</code>: what the page sends and how the waiting/error states are handled.</li>
+      <li><code>server.js</code> — find <code>app.post("/api/turn", …)</code>: opponent call, then <code>sanitizeOpponentResult</code> (quote checking, call-out routing), then the judge call with its own sanitizing.</li>
+      <li><code>src/llm.js</code> — find <code>export async function callJson</code>: the single place that knows the API endpoint, key, JSON mode, and retry rule.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>To change this, start here</h2>
+    <ul class="change-list">
+      <li><b>Opponent personality or toughness</b> → <code>src/levels.js</code> (persona text and the allowed-technique lists per level).</li>
+      <li><b>Rhetorical techniques vocabulary</b> → <code>src/techniques.js</code>; the prompts and validations pick the list up automatically.</li>
+      <li><b>Judge or verdict wording rules</b> → <code>src/prompts.js</code> (<code>judgeSystemPrompt</code>, <code>verdictSystemPrompt</code>); length and consistency limits are enforced in <code>server.js</code>.</li>
+      <li><b>Topics and positions</b> → <code>src/topics.js</code>.</li>
+      <li><b>Model provider or model id</b> → no code change: edit <code>.env</code> (<code>LLM_BASE_URL</code>, <code>LLM_API_KEY</code>, <code>LLM_MODEL</code>); see <code>.env.example</code>.</li>
+      <li><b>Page look</b> → <code>public/styles.css</code>; the layout skeleton is in <code>public/index.html</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>A practice to reuse</h2>
+    <p><b>Make the model's claims checkable at the boundary.</b> The opponent logs the techniques it used with exact quotes; <code>server.js</code> (<code>sanitizeOpponentResult</code>, <code>quoteMatches</code>) verifies every quote against the reply before the judge treats the log as ground truth — normalizing quotes, dashes, whitespace, and case first, dropping or re-routing entries that do not check out. The same idea works anywhere a model's output feeds downstream logic: define the verifiable fields, validate at one boundary, and decide explicitly what happens to a failed entry (retry, drop, or re-route) instead of letting bad data flow on.</p>
+  </section>
+
+  <section>
+    <h2>Run it again</h2>
+    <p><code>npm install</code> &nbsp;&rarr;&nbsp; <code>copy .env.example .env</code> (put your model-provider key in <code>.env</code>) &nbsp;&rarr;&nbsp; <code>npm start</code> &nbsp;&rarr;&nbsp; open <code>http://localhost:3000</code>.</p>
+    <p>Source snapshot: commit <code>ebe8291</code> (branch <code>master</code>). If the code has moved on since, trust the code, not the map.</p>
+  </section>
+</main>
+<footer>Orator — generated as part of the Build With AI: Basics hackathon workflow.</footer>
+</body>
+</html>
