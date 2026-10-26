@@ -35,3 +35,5 @@ Open http://localhost:3000.
 ## License
 
 MIT — see `LICENSE`.
+  
+"Logo image generated with ChatGPT."  

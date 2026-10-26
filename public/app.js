@@ -56,7 +56,7 @@ topicSelect.addEventListener("change", () => {
     positionGroup.appendChild(placeholder);
     return updateStartButton();
   }
-  for (const position of topic.positions) {
+  topic.positions.forEach((position, index) => {
     const label = document.createElement("label");
     label.className = "side-option";
     const radio = document.createElement("input");
@@ -67,14 +67,35 @@ topicSelect.addEventListener("change", () => {
       state.setup.positionId = position.id;
       updateStartButton();
     });
+    const side = document.createElement("span");
+    side.className = "side-eyebrow";
+    side.textContent = index === 0 ? "For" : "Against";
     const text = document.createElement("span");
+    text.className = "side-text";
     text.textContent = position.label;
     label.appendChild(radio);
+    label.appendChild(side);
     label.appendChild(text);
     positionGroup.appendChild(label);
-  }
+  });
   updateStartButton();
 });
+
+// Segmented opponent switch; it drives the (visually hidden) level select.
+const levelButtons = document.querySelectorAll(".level-option");
+function syncLevelButtons() {
+  levelButtons.forEach((button) => {
+    button.setAttribute("aria-checked", String(button.dataset.level === levelSelect.value));
+  });
+}
+levelButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    levelSelect.value = button.dataset.level;
+    levelSelect.dispatchEvent(new Event("change"));
+    syncLevelButtons();
+  });
+});
+syncLevelButtons();
 
 // One-line description under the opponent select (prd.md > Opponent levels).
 const LEVEL_HINTS = {
@@ -132,8 +153,16 @@ function startDebateScreen() {
   messageInput.focus();
 }
 
+const progress = document.getElementById("progress");
+
 function updateCounter() {
   headerCounter.textContent = `${state.history.length} / ${MAX_EXCHANGES}`;
+  progress.innerHTML = "";
+  for (let i = 0; i < MAX_EXCHANGES; i++) {
+    const step = document.createElement("span");
+    if (i < state.history.length) step.className = "done";
+    progress.appendChild(step);
+  }
   stopButton.disabled = state.history.length === 0 || state.status === "finished";
 }
 
@@ -159,8 +188,8 @@ function addChatMessage(speaker, text) {
     side.className = "speaker-side";
     side.textContent =
       speaker === "user"
-        ? headerPosition.textContent
-        : `${headerLevel.textContent} opponent`;
+        ? `Exchange ${state.history.length + 1}`
+        : headerLevel.textContent;
     who.appendChild(name);
     who.appendChild(side);
     bubble.appendChild(who);
@@ -182,7 +211,7 @@ turnForm.addEventListener("submit", async (event) => {
   messageInput.disabled = true;
   sendButton.disabled = true;
   stopButton.disabled = true;
-  waitingIndicator.textContent = "The opponent is preparing a reply…";
+  waitingIndicator.textContent = "The opponent is preparing a rebuttal";
   waitingIndicator.hidden = false;
   addChatMessage("user", message);
   messageInput.value = "";
@@ -247,7 +276,7 @@ async function finishDebate() {
   messageInput.disabled = true;
   sendButton.disabled = true;
   stopButton.disabled = true;
-  waitingIndicator.textContent = "The judge is writing the verdict…";
+  waitingIndicator.textContent = "The judge is writing the verdict";
   waitingIndicator.hidden = false;
   try {
     const res = await fetch("/api/verdict", {
@@ -371,7 +400,7 @@ function addAnalysisCard(exchangeNumber, analysis) {
       analysisSection("Opponent used", formatTechniques(analysis.opponentTechniques, "effect"))
     );
     card.appendChild(
-      analysisSection("You used or seem to have used", formatTechniques(analysis.userTechniques, "confidence"))
+      analysisSection("You used", formatTechniques(analysis.userTechniques, "confidence"))
     );
     card.appendChild(
       analysisSection("Opponent exposed", formatTechniques(analysis.opponentExposed, "effect"))
@@ -401,6 +430,23 @@ function analysisSection(title, lines) {
   return section;
 }
 
+// Mirrors the "manipulative" flags in src/techniques.js, for the badges only.
+const MANIPULATIVE = new Set([
+  "strawman",
+  "false dilemma",
+  "slippery slope",
+  "red herring / whataboutism",
+  "appeal to emotion",
+  "false authority",
+  "appeal to the crowd (demagoguery)",
+  "loaded question",
+  "cherry-picking",
+  "moving the goalposts",
+  "quibbling over wording",
+  "turning the speaker's words against them",
+  "ad hominem",
+]);
+
 // Each technique: its name, the exact quote, and the judge's short note.
 function formatTechniques(list, detailField) {
   if (!list || !list.length) {
@@ -414,13 +460,21 @@ function formatTechniques(list, detailField) {
     item.className = "technique";
     const name = document.createElement("p");
     name.className = "technique-name";
-    name.textContent = t.name;
+    const label = document.createElement("span");
+    label.className = "technique-label";
+    label.textContent = t.name ? t.name.charAt(0).toUpperCase() + t.name.slice(1) : "";
+    name.appendChild(label);
+    const manipulative = MANIPULATIVE.has(String(t.name).toLowerCase());
+    const badge = document.createElement("span");
+    badge.className = `flag ${manipulative ? "flag-manipulative" : "flag-legitimate"}`;
+    badge.textContent = manipulative ? "manipulative" : "legitimate";
+    name.appendChild(badge);
     const detail = t[detailField];
-    if (detailField === "confidence" && detail) {
-      const badge = document.createElement("span");
-      badge.className = `confidence confidence-${detail}`;
-      badge.textContent = detail;
-      name.appendChild(badge);
+    if (detailField === "confidence" && detail === "likely") {
+      const likely = document.createElement("span");
+      likely.className = "likely";
+      likely.textContent = "likely";
+      name.appendChild(likely);
     }
     item.appendChild(name);
     if (t.quote) {

@@ -8,8 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
   />
+  <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -17,8 +18,8 @@
     <!-- Setup screen -->
     <section id="setup-screen" class="setup">
       <header class="setup-intro">
-        <p class="brand">Orator</p>
-        <h1>Argue a motion against an AI opponent. A neutral judge shows which techniques each side used.</h1>
+        <img class="logo" src="logo.png" alt="Orator" width="920" height="730" />
+        <h1>Argue a motion against an AI opponent. A neutral judge shows which techniques <em>each side</em> used.</h1>
         <p class="setup-lede">You speak first. The judge's notes stay hidden until you open them, so you can try to spot the opponent's moves yourself.</p>
       </header>
 
@@ -42,15 +43,26 @@
           </div>
         </fieldset>
 
-        <label class="field">
-          <span class="field-label">Opponent</span>
-          <select id="level-select">
+        <div class="field">
+          <span class="field-label" id="level-label">Opponent</span>
+          <div class="level-switch" role="radiogroup" aria-labelledby="level-label">
+            <button type="button" class="level-option" data-level="friendly" role="radio" aria-checked="true">
+              <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>Friendly
+            </button>
+            <button type="button" class="level-option" data-level="strict" role="radio" aria-checked="false">
+              <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>Strict
+            </button>
+            <button type="button" class="level-option" data-level="hostile" role="radio" aria-checked="false">
+              <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>Hostile
+            </button>
+          </div>
+          <select id="level-select" class="visually-hidden" tabindex="-1" aria-hidden="true">
             <option value="friendly">Friendly</option>
             <option value="strict">Strict</option>
             <option value="hostile">Hostile</option>
           </select>
           <span id="level-hint" class="field-hint">Polite and correct. Argues on the merits and does not manipulate.</span>
-        </label>
+        </div>
 
         <button type="submit" id="start-button" class="primary" disabled>Take the floor</button>
       </form>
@@ -73,20 +85,24 @@
             <dd id="header-level"></dd>
           </div>
         </dl>
-        <div class="header-actions">
-          <span class="counter"><span class="counter-label">Exchange</span> <span id="header-counter">0 / 10</span></span>
-          <button type="button" id="stop-button" class="quiet" disabled>Stop the debate</button>
+        <div class="counter">
+          <div class="counter-top">
+            <span class="counter-label">Exchange</span>
+            <span id="header-counter">0 / 10</span>
+          </div>
+          <div id="progress" class="progress" aria-hidden="true"></div>
         </div>
+        <button type="button" id="stop-button" class="quiet" disabled>Stop the debate</button>
       </header>
 
       <div id="debate-layout">
         <div class="floor">
           <div id="chat-panel" aria-live="polite"></div>
-          <p id="waiting-indicator" hidden>The opponent is preparing a reply…</p>
+          <p id="waiting-indicator" hidden>The opponent is preparing a rebuttal</p>
           <form id="turn-form">
             <label for="message-input" class="visually-hidden">Your argument</label>
             <textarea id="message-input" rows="3" placeholder="Make your argument…"></textarea>
-            <button type="submit" id="send-button" class="primary" disabled>Send</button>
+            <button type="submit" id="send-button" class="secondary" disabled>Send</button>
           </form>
         </div>
 
